@@ -2214,8 +2214,8 @@ button {
 .poster {
   background: #fffaf0;
   border: 2px solid var(--seal);
-  padding: 16px 16px 18px;
-  margin: 10px 0 14px;
+  padding: 18px 16px 20px;
+  margin: 4px 0 14px;
   color: #2a2118;
   box-shadow: 4px 6px 0 rgba(42, 33, 24, 0.16);
 }
@@ -2231,41 +2231,64 @@ button {
 }
 
 .poster-kicker {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--seal);
-  margin: 8px 0 4px;
+  margin: 10px 0 4px;
 }
 
 .poster h2 {
   font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 500;
-  margin: 0 0 8px;
+  line-height: 1.25;
+  margin: 0 0 10px;
 }
 
 .poster-line {
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
   color: #5c4e3e;
 }
 
-.poster-stats {
+.poster-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
-  margin: 12px 0;
-  font-size: 13px;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 10px 0;
+  border-top: 1px dashed #d9c9ae;
+  border-bottom: 1px dashed #d9c9ae;
+}
+
+.poster-pair i {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.poster-pair b {
+  display: block;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.poster.dead .poster-pair div:last-child b {
+  color: var(--seal);
 }
 
 .poster-crowd {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 1.45;
   color: var(--seal);
 }
 
 .poster-foot {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -2300,4 +2323,152 @@ button {
 .intro .primary {
   position: relative;
   z-index: 3;
+}
+
+.notice {
+  background: var(--paper);
+  border: 1px solid var(--seal);
+  padding: 18px 16px 20px;
+  box-shadow: 4px 6px 0 rgba(42, 33, 24, 0.14);
+  transform: rotate(-0.35deg);
+}
+
+.notice-top {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--seal);
+}
+
+.notice-who {
+  margin: 10px 0 14px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.notice-wait {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 22px;
+  color: var(--seal);
+}
+
+.notice-due,
+.notice-pocket {
+  margin: 12px 0;
+}
+
+.notice-due i,
+.notice-pocket i {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.notice-due b,
+.notice-pocket b {
+  display: block;
+  font-size: 40px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0 2px;
+}
+
+.notice-due em,
+.notice-pocket em {
+  font-style: normal;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.notice-warn {
+  margin: 14px 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--seal);
+}
+
+.notice-seal {
+  margin: 18px auto 10px;
+  width: 148px;
+  height: 148px;
+  border: 4px solid var(--seal);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--seal);
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 26px;
+  line-height: 1.25;
+  transform: rotate(-12deg);
+  letter-spacing: 0.08em;
+}
+
+.notice-crowd {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.dare {
+  margin: 8px 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--seal);
+  font-weight: 650;
+}
+
+.evict-screen .dare,
+.evict-screen .shot-hint {
+  color: #e8d7c4;
+  text-align: center;
+}
+
+.shot-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 10px;
+  text-align: center;
+}
+
+.shelf {
+  margin: 10px 0 4px;
+}
+
+.shelf-h {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.stamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.stamp {
+  font-size: 11px;
+  padding: 4px 7px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+}
+
+.stamp.on {
+  border-style: solid;
+  border-color: var(--seal);
+  color: var(--seal);
+  background: rgba(181, 68, 50, 0.06);
+}
+
+.stamp.on.dead {
+  background: rgba(181, 68, 50, 0.12);
+}
+
+.rent-page .crowd-line {
+  margin: 0 0 14px;
 }

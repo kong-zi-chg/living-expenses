@@ -3692,6 +3692,76 @@
     return "刚把门打开";
   }
 
+  const LIVE_STAMPS = [
+    { months: 1, title: "还没被请走" },
+    { months: 3, title: "交过一季房租" },
+    { months: 6, title: "活过半年" },
+    { months: 9, title: "还住着的人" },
+    { months: 12, title: "学费交在游戏里" },
+  ];
+
+  const DEATH_STAMPS = [
+    { id: "allin", title: "全仓死的" },
+    { id: "dca", title: "定投死的" },
+    { id: "leverage", title: "借来的胆子" },
+    { id: "paper", title: "账上很富，口袋很穷" },
+    { id: "life", title: "不是行情杀的" },
+    { id: "broke", title: "这个月交不起" },
+  ];
+
+  function nextDare() {
+    const meta = loadMeta();
+    const best = meta.bestMonths || 0;
+    const ach = meta.achievements || {};
+    if (best < 1) {
+      return { long: "先把这一个月的房租交上。印上「还没被请走」。", short: "先活过一个月" };
+    }
+    if (best < 3) {
+      return {
+        long: "最长住过 " + best + " 个月。再住 " + (3 - best) + " 个月，印上「交过一季房租」。",
+        short: "去印「交过一季房租」",
+      };
+    }
+    if (best < 6) {
+      return {
+        long: "差 " + (6 - best) + " 个月印上「活过半年」。称号跟着房租走。",
+        short: "去印「活过半年」",
+      };
+    }
+    if (!ach["no-allin"]) {
+      return { long: "「没按过最大的那个」还空着。从不全仓，再住半年。", short: "去印「没按过最大的那个」" };
+    }
+    if (!ach["looker"]) {
+      return { long: "「先看店的人」还空着。看店比出手勤，再住一季。", short: "去印「先看店的人」" };
+    }
+    return { long: "城南还记得你印过的那些。再住一轮。", short: "再住一轮" };
+  }
+
+  function endcardOf(state) {
+    const r = state.report || {};
+    const lost = !!state.flags.evicted;
+    const c = crowdWeek();
+    const title = (r.ending && r.ending.title) || surviveTitle(state.monthsPaid || 0);
+    const line = (r.ending && r.ending.body) || "";
+    const nav = r.nav || navOf(state);
+    const due = rentOf(Math.max(1, currentMonth(state)));
+    const verdict = lost
+      ? "本周把钥匙留下的 " + c.out + " 人里，有你。城南还住着 " + c.alive + " 人。"
+      : "本周城南还住着 " + c.alive + " 人。你是其中一个。交不起离开的，有 " + c.out + " 人。";
+    return {
+      lost,
+      title,
+      line,
+      nav,
+      due,
+      months: state.monthsPaid || 0,
+      cash: state.cash,
+      c,
+      verdict,
+      diff: diffOf(state).name,
+    };
+  }
+
   function collectAchievements(state) {
     const months = state.monthsPaid || 0;
     const alive = !state.flags.evicted;
@@ -3773,39 +3843,21 @@
   }
 
   function punchyShare(state, ending) {
-    const lost = !!state.flags.evicted;
-    const sharp = (ending && ending.title) || surviveTitle(state.monthsPaid || 0);
-    const line = (ending && ending.body) || "";
-    const nav = (state.report && state.report.nav) || navOf(state);
-    const months = state.monthsPaid || 0;
-    const due = rentOf(Math.max(1, currentMonth(state)));
-    if (lost) {
-      return (
-        "我在《生活费》里「" +
-        sharp +
-        "」。\n" +
-        line +
-        "\n净值 " +
-        money(nav) +
-        "，房租只要 " +
-        money(due) +
-        "。现金不够。\n" +
-        crowdCaption(true) +
-        "\n股票涨了不能当房租。你呢？\n#生活费 #交不起就出局"
-      );
-    }
+    const card = endcardOf(state);
+    const title = (ending && ending.title) || card.title;
+    const line = (ending && ending.body) || card.line;
     return (
-      "我在《生活费》里活成了「" +
-      sharp +
-      "」。\n活过 " +
-      months +
-      " 个月 · " +
-      diffOf(state).name +
-      " · 最大仓位 " +
-      pct(topWeight(state)) +
-      "\n" +
-      crowdCaption(false) +
-      "\n我活下来了，你呢？\n#生活费"
+      "「" +
+      title +
+      "」\n" +
+      line +
+      "\n净值 " +
+      money(card.nav) +
+      "，房租只要 " +
+      money(card.due) +
+      "。\n" +
+      card.verdict +
+      "\n#生活费"
     );
   }
 
@@ -4169,11 +4221,26 @@
     }
     const ach = collectAchievements(state);
     const meta = loadMeta();
+    const titles = Object.assign({}, meta.titles || {});
+    const deaths = Object.assign({}, meta.deaths || {});
+    const title = ending.title;
+    state.flags.newTitle = !titles[title];
+    titles[title] = (titles[title] || 0) + 1;
+    LIVE_STAMPS.forEach((s) => {
+      if ((state.monthsPaid || 0) >= s.months && !titles[s.title]) titles[s.title] = 1;
+    });
+    ach.forEach((a) => {
+      if (!titles[a.title]) titles[a.title] = 1;
+    });
+    if (state.flags.evicted && state.flags.deathKind) deaths[state.flags.deathKind] = true;
     saveMeta({
       bestMonths: Math.max(meta.bestMonths || 0, state.monthsPaid || 0),
       plays: (meta.plays || 0) + 1,
       hardUnlocked: meta.hardUnlocked || hardUnlocked() || (state.monthsPaid || 0) >= 3,
       lastDeath: state.flags.evicted ? state.flags.deathKind : "",
+      titles,
+      deaths,
+      lastTitle: title,
     });
     state.report = {
       nav,
@@ -4309,13 +4376,6 @@
 
   function renderCrowdClip(mode) {
     const c = crowdWeek();
-    if (mode === "strip") {
-      return `<button type="button" class="crowd-strip" data-act="crowd-clip">
-        <i>${c.paper} · 出租屋专版</i>
-        <b>本周还住着 ${c.alive} 人</b>
-        <em>交不起房租离开的：${c.out} 人</em>
-      </button>`;
-    }
     if (mode === "mute") {
       return `<div class="clip crowd-clip" style="--rot:-0.8deg">
         <i>${c.paper} · 出租屋专版</i>
@@ -4330,51 +4390,72 @@
     </button>`;
   }
 
+  function renderStampShelf() {
+    const meta = loadMeta();
+    if (!(meta.plays || 0)) return "";
+    const titles = meta.titles || {};
+    const deaths = meta.deaths || {};
+    const live = LIVE_STAMPS.map(
+      (s) => `<span class="stamp${titles[s.title] ? " on" : ""}">${s.title}</span>`
+    ).join("");
+    const dead = DEATH_STAMPS.map(
+      (s) => `<span class="stamp${deaths[s.id] ? " on dead" : ""}">${s.title}</span>`
+    ).join("");
+    return `<div class="shelf">
+      <div class="shelf-h">你印过的</div>
+      <div class="stamps">${live}</div>
+      <div class="stamps">${dead}</div>
+      <p class="fine">最长住过 ${meta.bestMonths || 0} 个月 · 进过场 ${meta.plays || 0} 次</p>
+    </div>`;
+  }
+
   function renderPoster() {
-    const r = state.report || {};
-    const lost = !!state.flags.evicted;
-    const c = crowdWeek();
-    const title = (r.ending && r.ending.title) || surviveTitle(state.monthsPaid || 0);
-    const line = (r.ending && r.ending.body) || "";
-    return `<article class="poster ${lost ? "dead" : "live"}">
-      <div class="poster-paper">${c.paper} · 出租屋专版</div>
-      <div class="poster-kicker">${lost ? "本周出局" : "本周还住着"}</div>
-      <h2>「${title}」</h2>
-      <p class="poster-line">${line}</p>
-      <div class="poster-stats">
-        <span>活过 ${state.monthsPaid || 0} 个月</span>
-        <span>净值 ${money(r.nav || navOf(state))}</span>
-        <span>回撤 ${pct(state.maxDD)}</span>
-        <span>现金最低 ${money(r.minCash == null ? startCashOf(state) : r.minCash)}</span>
+    const e = endcardOf(state);
+    return `<article class="poster ${e.lost ? "dead" : "live"}">
+      <div class="poster-paper">${e.c.paper} · ${e.lost ? "本周出局名单" : "本周还住着"}</div>
+      <div class="poster-kicker">${e.lost ? "这一局的死法" : "本局称号"}</div>
+      <h2>${e.title}</h2>
+      <p class="poster-line">${e.line}</p>
+      <div class="poster-pair">
+        <div><i>净值</i><b>${money(e.nav)}</b></div>
+        <div><i>房租只要</i><b>${money(e.due)}</b></div>
       </div>
-      <p class="poster-crowd">${lost ? "还住着 " + c.alive + " 人。我不是。" : "还住着 " + c.alive + " 人。我是其中一个。"}</p>
-      <p class="poster-foot">《生活费》· 股票涨了不能当房租</p>
+      <p class="poster-crowd">${e.verdict}</p>
+      <p class="poster-foot">活过 ${e.months} 个月 · ${e.diff} · 《生活费》</p>
     </article>`;
   }
 
   function renderIntro() {
-    const lines = [
-      "你口袋里有八万。",
-      "房东下个月要八千。只要现金。",
-      "群里说：全仓。翻倍是礼貌。",
-      "股票涨了，不能当房租。",
-    ];
-    const last = 4;
-    const step = Math.min(state.introStep || 0, last);
-    const shown = lines
-      .slice(0, Math.min(step + 1, lines.length))
-      .map((t, i) => `<p class="intro-line${i === Math.min(step, lines.length - 1) ? " now" : ""}">${t}</p>`)
-      .join("");
-    const done = step >= last;
+    const step = Math.min(state.introStep || 0, 4);
+    const c = crowdWeek();
+    const done = step >= 4;
     return `
       <section class="screen intro" data-act="intro-next">
-        <div class="kicker">城南 · 一间出租屋</div>
-        ${shown}
-        ${step >= last - 1 ? renderCrowdClip("mute") : ""}
+        <div class="notice">
+          <div class="notice-top">城南房屋租赁 · 催租通知</div>
+          <p class="notice-who">致：本室承租人</p>
+          ${
+            step >= 1
+              ? `<div class="notice-due"><i>本月应付</i><b>¥8,000</b><em>只要现金。股票不收。</em></div>`
+              : `<p class="notice-wait">一张单子。先看金额。</p>`
+          }
+          ${
+            step >= 2
+              ? `<div class="notice-pocket"><i>你口袋里</i><b>¥80,000</b><em>生活费。买成店的，就不能交这张单。</em></div>`
+              : ""
+          }
+          ${step >= 3 ? `<p class="notice-warn">买成股票的，交不了房租。</p>` : ""}
+          ${
+            step >= 4
+              ? `<div class="notice-seal">交不起<br>就出局</div>
+                 <p class="notice-crowd">${c.paper}：本周还住着 ${c.alive} 人。交不起离开的 ${c.out} 人。</p>`
+              : ""
+          }
+        </div>
         ${
           done
-            ? `<button class="primary" data-act="intro-done">打开账本</button>`
-            : `<p class="fine">点一下，往下听。</p>`
+            ? `<button class="primary" data-act="intro-done">我看见了。选一种活法。</button>`
+            : `<p class="fine">点一下，把这张单看完。</p>`
         }
       </section>`;
   }
@@ -4383,6 +4464,7 @@
     const hardOn = hardUnlocked();
     const meta = loadMeta();
     const nTerms = Object.keys(meta.termsEver || {}).length;
+    const dare = nextDare();
     const cards = ["easy", "std", "hard"]
       .map((id) => {
         const d = DIFFS[id];
@@ -4402,8 +4484,9 @@
         <div>
           <div class="kicker">选一种活法</div>
           <h1>生活费</h1>
-          <p class="lede">交不起就出局。股票带不走房租。</p>
-          ${renderCrowdClip("paper")}
+          <p class="lede">刚才那张单，每个月都会来。</p>
+          <p class="dare">${dare.long}</p>
+          ${renderStampShelf()}
         </div>
         <div class="diff-list">${cards}</div>
         ${renderSheet()}
@@ -4432,18 +4515,25 @@
   }
 
   function renderEvicted() {
-    const dead = deathCopy(state.flags.deathKind || "broke", state);
-    const c = crowdWeek();
+    return renderEndcard();
+  }
+
+  function renderEndcard() {
+    const e = endcardOf(state);
+    const dare = nextDare();
+    const fresh = state.flags.newTitle
+      ? "新印上：「" + e.title + "」"
+      : dare.long;
     return `
       <section class="screen evict-screen">
-        <div class="kicker">交租日 · ${c.paper}</div>
-        <h1>出局</h1>
-        <p class="evict-title">${dead.title}</p>
-        <p class="lede">${dead.line}</p>
-        <p class="crowd-line">本周已有 <em>${c.out}</em> 人把钥匙留下。还住着 ${c.alive} 人。</p>
         ${renderPoster()}
-        <button class="primary" data-act="shot">保存这张死亡卡片 · 配文一起走</button>
-        <button class="ghost" data-act="see-death">看这一局怎么死的</button>
+        <button class="primary" data-act="shot">${
+          e.lost ? "带走这张死法" : "带走这张存活证明"
+        }</button>
+        <p class="shot-hint">保存图片，配文已复制。发朋友圈或小红书。</p>
+        <p class="dare light">${fresh}</p>
+        <button class="ghost" data-act="see-death">${e.lost ? "看这一局怎么死的" : "看这一局怎么活的"}</button>
+        <button class="ghost" data-act="again">再活一局 · ${dare.short}</button>
         ${renderSheet()}
         ${renderToasts()}
       </section>`;
@@ -4454,6 +4544,24 @@
     const s = state.sheet;
     if (s.kind === "life") {
       const n = s.cash || 0;
+      const due = rentOf(currentMonth(state));
+      const gap = due - state.cash;
+      const stingLine =
+        n < 0
+          ? gap > 0
+            ? "这个月房租还要 " +
+              money(due) +
+              "。口袋 " +
+              money(state.cash) +
+              "，还差 " +
+              money(gap) +
+              "。生活跟房租抢同一笔现金。不是随机惩罚。"
+            : "这个月房租还要 " +
+              money(due) +
+              "。口袋还剩 " +
+              money(state.cash) +
+              "。这一下还没打穿房租，但现金已经少了一截。"
+          : "现金现在 " + money(state.cash) + "。这个月房租还是 " + money(due) + "。";
       return `
         <div class="sheet" data-act="close-sheet">
           <div class="sheet-card life-card" data-stop="1">
@@ -4461,7 +4569,7 @@
             <h2>${s.title}</h2>
             <p class="life-cash ${n < 0 ? "down" : "up"}">${n > 0 ? "+" : ""}${money(n)}</p>
             <p>${s.body}</p>
-            <p class="warn">现金现在 ${money(state.cash)}。房东仍然只要现金。</p>
+            <p class="warn">${stingLine}</p>
             <button class="primary" style="margin-top:16px" data-act="close-sheet">我看见了</button>
           </div>
         </div>`;
@@ -5129,7 +5237,6 @@
     return `
       <section class="screen play-desk" style="padding-top:18px">
         ${renderMission()}
-        ${renderCrowdClip("strip")}
         ${renderTape()}
         <div class="live-row">
           <span class="live-pill">${m < 2 ? "看店免费" : '<i></i><span data-live-clock>' + liveClock() + "</span>"}</span>
@@ -5237,20 +5344,14 @@
       .map((a) => `<div class="move"><div class="when">${a.title}</div><p>${a.body}</p></div>`)
       .join("");
     const tl = (r.timeline || []).map((t) => `<li>${t}</li>`).join("");
+    const e = endcardOf(state);
+    const dare = nextDare();
 
     return `
       <section class="screen recap">
-        <div class="kicker">${lost ? "这个月交不起" : "还住着"} · ${diffOf(state).name}</div>
-        <p class="roast-label">${lost ? "拿去发的那张" : "拿去发的那张"}</p>
-        ${renderPoster()}
-        <button class="primary" data-act="shot">${
-          lost ? "保存死亡卡片 · 配文一起走" : "保存存活证明 · 配文一起走"
-        }</button>
-        <button class="ghost" data-act="copy">${
-          state.copied === "share" ? "配文已复制" : "先复制配文，发朋友圈 / 小红书"
-        }</button>
-        ${renderCrowdClip("paper")}
-        <p class="lede">${r.ending ? r.ending.body : "群已经改口了。房东不会。"}</p>
+        <div class="kicker">这一局怎么${lost ? "死" : "活"}的 · ${diffOf(state).name}</div>
+        <p class="dare">${state.flags.newTitle ? "新印上：「" + e.title + "」" : dare.long}</p>
+        ${renderStampShelf()}
 
         <div class="recap-sec">复盘摘要</div>
         <table class="report">
@@ -5281,10 +5382,14 @@
         <ul class="journal">${items}</ul>
 
         <div class="share-box">${state.share}</div>
+        <button class="ghost" data-act="shot">${lost ? "还没带走死法？现在保存" : "还没带走证明？现在保存"}</button>
+        <button class="ghost" data-act="copy">${
+          state.copied === "share" ? "配文已复制" : "复制配文"
+        }</button>
         <button class="ghost" data-act="copy-way">${
           state.copied === "way" ? "已复制长配文" : "复制更长的一版（含回撤和现金最低）"
         }</button>
-        <button class="ghost" data-act="again">再活一局</button>
+        <button class="ghost" data-act="again">再活一局 · ${dare.short}</button>
         ${renderSheet()}
         ${renderToasts()}
       </section>`;
@@ -5312,11 +5417,13 @@
         </div>`;
       })
       .join("");
+    const c = crowdWeek();
     return `
       <section class="screen rent-page">
         <div class="kicker">第 ${currentMonth(state)} 个月 · 交租日</div>
         <h1>房东只要现金</h1>
         <p class="lede">股票可以带到下个月。租金不能欠。交完剩下的现金和没卖的股票，原样带走。</p>
+        <p class="crowd-line">${c.paper}：本周已有 <em>${c.out}</em> 人把钥匙留下。还住着 ${c.alive} 人。</p>
         <table class="report">
           <tr><th>本月房租</th><td>${money(due)}</td></tr>
           <tr><th>现金</th><td class="pnl ${canPay ? "up" : "down"}">${money(state.cash)}</td></tr>
@@ -5355,60 +5462,59 @@
         state.introStep = (state.introStep || 0) + 1;
         render();
       }
-    }, 4200);
+      }, 2800);
   }
 
   function shareCard() {
-    const r = state.report || {};
-    const lost = !!state.flags.evicted;
-    const c = crowdWeek();
-    const title = (r.ending && r.ending.title) || surviveTitle(state.monthsPaid || 0);
-    const body = (r.ending && r.ending.body) || "";
-    const caption = (state.share || punchyShare(state, r.ending)) + "\n" + location.href;
+    const e = endcardOf(state);
+    const caption = (state.share || punchyShare(state, state.report && state.report.ending)) + "\n" + location.href;
     const canvas = document.createElement("canvas");
     canvas.width = 1080;
-    canvas.height = 1440;
+    canvas.height = 1350;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = lost ? "#1a1010" : "#efe4d0";
-    ctx.fillRect(0, 0, 1080, 1440);
+    ctx.fillStyle = "#2a2118";
+    ctx.fillRect(0, 0, 1080, 1350);
     ctx.fillStyle = "#fbf6ea";
-    ctx.fillRect(64, 64, 952, 1312);
+    ctx.fillRect(70, 70, 940, 1210);
     ctx.strokeStyle = "#b54432";
-    ctx.lineWidth = 8;
-    ctx.strokeRect(96, 96, 888, 1248);
+    ctx.lineWidth = 6;
+    ctx.strokeRect(98, 98, 884, 1154);
+    ctx.fillStyle = "#b54432";
+    ctx.font = "700 26px sans-serif";
+    ctx.fillText(e.c.paper + " · " + (e.lost ? "本周出局名单" : "本周还住着"), 150, 180);
+    ctx.font = "700 22px sans-serif";
+    ctx.fillText(e.lost ? "这一局的死法" : "本局称号", 150, 230);
+    ctx.fillStyle = "#2a2118";
+    ctx.font = "500 64px serif";
+    wrapText(ctx, e.title, 150, 320, 780, 72);
+    ctx.fillStyle = "#5c4e3e";
+    ctx.font = "24px sans-serif";
+    wrapText(ctx, e.line, 150, 500, 780, 36);
+    ctx.fillStyle = "#6f5f4c";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("净值", 150, 680);
+    ctx.fillText("房租只要", 540, 680);
+    ctx.fillStyle = "#2a2118";
+    ctx.font = "700 40px sans-serif";
+    ctx.fillText(money(e.nav), 150, 736);
+    ctx.fillStyle = "#b54432";
+    ctx.fillText(money(e.due), 540, 736);
     ctx.fillStyle = "#b54432";
     ctx.font = "700 28px sans-serif";
-    ctx.fillText(c.paper + " · 出租屋专版", 140, 180);
-    ctx.font = "700 36px sans-serif";
-    ctx.fillText(lost ? "本周出局" : "本周还住着", 140, 240);
-    ctx.fillStyle = "#2a2118";
-    ctx.font = "500 56px serif";
-    wrapText(ctx, "「" + title + "」", 140, 330, 800, 64);
-    ctx.fillStyle = "#5c4e3e";
-    ctx.font = "22px sans-serif";
-    wrapText(ctx, body, 140, 480, 800, 34);
-    ctx.fillStyle = "#2a2118";
-    ctx.font = "26px sans-serif";
-    const lines = [
-      "活过 " + (state.monthsPaid || 0) + " 个月 · " + diffOf(state).name,
-      "净值 " + money(r.nav || navOf(state)) + " · 回撤 " + pct(state.maxDD),
-      "现金最低 " + money(r.minCash == null ? startCashOf(state) : r.minCash),
-      lost ? "还住着 " + c.alive + " 人。我不是。" : "还住着 " + c.alive + " 人。我是其中一个。",
-    ];
-    lines.forEach((t, i) => ctx.fillText(t, 140, 780 + i * 56));
+    wrapText(ctx, e.verdict, 150, 840, 780, 40);
     ctx.beginPath();
-    ctx.arc(860, 1180, 88, 0, Math.PI * 2);
+    ctx.arc(860, 1120, 78, 0, Math.PI * 2);
     ctx.strokeStyle = "#b54432";
     ctx.lineWidth = 5;
     ctx.stroke();
     ctx.fillStyle = "#b54432";
-    ctx.font = "500 28px serif";
+    ctx.font = "500 26px serif";
     ctx.textAlign = "center";
-    ctx.fillText(lost ? "出局" : "还住着", 860, 1190);
+    ctx.fillText(e.lost ? "出局" : "还住着", 860, 1130);
     ctx.textAlign = "left";
     ctx.fillStyle = "#6f5f4c";
     ctx.font = "20px sans-serif";
-    ctx.fillText("《生活费》· 股票涨了不能当房租", 140, 1288);
+    ctx.fillText("活过 " + e.months + " 个月 · " + e.diff + " · 《生活费》", 150, 1188);
     return new Promise((resolve, reject) => {
       canvas.toBlob(async (blob) => {
         if (!blob) {
@@ -5416,10 +5522,10 @@
           return;
         }
         await copyCaption(caption);
-        const file = new File([blob], lost ? "生活费-出局.png" : "生活费-存活.png", { type: "image/png" });
+        const file = new File([blob], e.lost ? "生活费-出局.png" : "生活费-存活.png", { type: "image/png" });
         try {
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], text: caption, title: "生活费" });
+            await navigator.share({ files: [file], text: caption, title: e.title });
             toast(state, "卡片已交给系统分享。配文也复制了。");
             resolve();
             return;
@@ -5470,7 +5576,7 @@
     if (state.scene === "intro") root.innerHTML = renderIntro();
     else if (state.scene === "pick") root.innerHTML = renderPick();
     else if (state.scene === "transfer") root.innerHTML = renderTransfer();
-    else if (state.scene === "evicted") root.innerHTML = renderEvicted();
+    else if (state.scene === "evicted" || state.scene === "survived") root.innerHTML = renderEndcard();
     else if (state.ended) root.innerHTML = renderRecap();
     else if (state.scene === "rent") root.innerHTML = renderRent();
     else if (state.viewStock) root.innerHTML = renderStock();
@@ -5707,6 +5813,7 @@
         "你自己收工。不是被房东请走。少赚的那截，有时叫还活着。"
       );
       finish(state);
+      state.scene = "survived";
     }
     if (act === "headline") {
       const h = weekHeadlines(state)[Number(hit.dataset.i)];
