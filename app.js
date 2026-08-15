@@ -34,6 +34,88 @@
     leverage: 5,
     coin: 6,
   };
+  const META_KEY = "le-meta-v1";
+  const HARD_TERMS = 10;
+  const DIFFS = {
+    easy: {
+      id: "easy",
+      name: "普通人",
+      blurb: "生活费宽一点，房租低一点。先把规则摸熟。",
+      start: 100000,
+      rent: 6000,
+      nameCap: 0.48,
+      rentReserve: 2,
+      lifeP: 0.34,
+      lifeScale: 0.72,
+    },
+    std: {
+      id: "std",
+      name: "标准",
+      blurb: "八万生活费，八千房租。满仓某一只，最多到生活费的六成。",
+      start: 80000,
+      rent: 8000,
+      nameCap: 0.6,
+      rentReserve: 1,
+      lifeP: 0.52,
+      lifeScale: 1,
+    },
+    hard: {
+      id: "hard",
+      name: "狠人",
+      blurb: "钱更少，租更贵，生活更会敲门。全仓可以真的把房租买进去。",
+      start: 50000,
+      rent: 10000,
+      nameCap: 1,
+      rentReserve: 0,
+      lifeP: 0.78,
+      lifeScale: 1.4,
+    },
+  };
+
+  function loadMeta() {
+    try {
+      return JSON.parse(localStorage.getItem(META_KEY) || "{}") || {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function saveMeta(patch) {
+    const cur = Object.assign({}, loadMeta(), patch || {});
+    try {
+      localStorage.setItem(META_KEY, JSON.stringify(cur));
+    } catch (err) {}
+    return cur;
+  }
+
+  function hardUnlocked() {
+    const meta = loadMeta();
+    const n = Object.keys(meta.termsEver || {}).length;
+    return !!(meta.hardUnlocked || n >= HARD_TERMS || (meta.bestMonths || 0) >= 3);
+  }
+
+  function diffOf(st) {
+    return DIFFS[(st && st.diff) || "std"] || DIFFS.std;
+  }
+
+  function startCashOf(st) {
+    return (st && st.startCash) || START_CASH;
+  }
+
+  function gemNavOf(st) {
+    return Math.round(startCashOf(st) * 1.2);
+  }
+
+  function survivorsThisWeek() {
+    const now = new Date();
+    const seed = now.getFullYear() * 100 + Math.floor((now.getMonth() * 30 + now.getDate()) / 7);
+    let t = seed >>> 0;
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    const n = 1260 + (((r ^ (r >>> 14)) >>> 0) % 840);
+    return n;
+  }
 
   const TERMS = {
     position: {
@@ -238,7 +320,7 @@
   };
 
   const WEEK_ASK = [
-    { q: "转进去的八万，还叫存款吗？", go: "点「看店」。买成店的那部分不能再当房租，除非卖掉。房东只要现金。" },
+    { q: "转进去的生活费，还叫存款吗？", go: "点「看店」。买成店的那部分不能再当房租，除非卖掉。房东只要现金。" },
     { q: "现价里超出当前盈利的部分叫什么？", go: "点进星火「看店」，看「预期溢价」。那一截不是已经进账的钱，是市场对未来的定价。" },
     { q: "利润增长了，经营现金流跟上了吗？", go: "点「看店」。会计利润按权责发生制计算，经营现金流是实际到账的现金。" },
     { q: "创业板这周在涨，为什么街上没有它？", go: "净值不到门槛，门不会出现。这叫投资者适当性：不问你会不会看，只问亏得起吗。" },
@@ -1059,6 +1141,17 @@
     { name: "群友晒收益", body: "截图很亮。截图交不出房租。你的现金没变，心跳变了。", term: "fomo", cash: 0 },
     { name: "被催交党费或工会费", body: "很小一笔。刚兑。股票不能代缴。", term: "cash", cash: -50 },
     { name: "旧手机卖了", body: "二手平台到账。落袋为安，很小的那种。", term: "realized", cash: 680 },
+    { name: "家人临时要钱", body: "老家来电话。不是投资，是家里。你转了。群还在喊加仓。", term: "cash", cash: -4800 },
+    { name: "合租水电清算", body: "舍友说「你用得多」。账单是真的。股票不能代缴。", term: "cash", cash: -1260 },
+    { name: "舍友跑路", body: "押金和他那份房租，暂时你垫。下个月不一定回来。", term: "cash", cash: -2200, minMonth: 2 },
+    { name: "体检自费", body: "公司不报。抽血的时候你还在想开盘。现金先出门。", term: "cash", cash: -1860 },
+    { name: "被骗小额", body: "客服说账户异常，让你点一个链接。点了。一百八没了。", term: "cash", cash: -180 },
+    { name: "同学婚礼随份子", body: "红包不能少。人情是刚兑，收益率写不进K线。", term: "cash", cash: -800 },
+    { name: "宿舍热水卡", body: "冬天洗澡也是刚兑。八十块。对净值无感。", term: "cash", cash: -80 },
+    { name: "牙补了一颗", body: "不是美容，是突然裂了。私立门诊现结。", term: "cash", cash: -3200, minMonth: 2 },
+    { name: "老家汇了一笔", body: "妈妈说少点外卖。不够翻盘，够你少慌一周。", term: "cash", cash: 1600 },
+    { name: "兼职家教", body: "两个晚上。现金进账。劳动，不是内部消息。", term: "cash", cash: 900 },
+    { name: "快递丢了理赔", body: "三十块。你当时在看盘，没去找。", term: "cash", cash: 30 },
   ];
 
   const NOISE_TOASTS = [
@@ -1401,7 +1494,7 @@
       week: 1,
       title: "先看店，再交租",
       chat: { who: "老王", text: "星火这波稳了。还在买菜的以后别说话。" },
-      news: "八万块已到账。这个月街上只开两家店：星火，和没人在群里提的麦香。看店不花次数。先看懂，再把手里的房租押上去。",
+      news: "生活费已到账。这个月街上只开两家店：星火，和没人在群里提的麦香。看店不花次数。先看懂，再把手里的房租押上去。",
       term: "position",
       narrative: {
         spark: 0.32,
@@ -1757,7 +1850,8 @@
   }
 
   function rentOf(month) {
-    return Math.round(RENT * Math.pow(1.04, Math.max(0, month - 1)));
+    const base = (state && state.rentBase) || RENT;
+    return Math.round(base * Math.pow(1.04, Math.max(0, month - 1)));
   }
 
   function cycleWeek(week) {
@@ -1883,10 +1977,17 @@
     }
     const life = pulse && pulse.life ? pulse.life : null;
     const early = currentMonth(st) <= 1;
+    const news =
+      st.week === 1
+        ? money(startCashOf(st)) +
+          " 已到账。这个月街上只开两家店：星火，和没人在群里提的麦香。看店不花次数。先看懂，再把手里的房租押上去。"
+        : early
+          ? base.news
+          : pickSalt(st, blurbs, 29) || base.news;
     return Object.assign({}, base, {
       title: early ? base.title : pickSalt(st, TITLE_BANK[cw], 41) || base.title,
       chat: pickSalt(st, chats, 17) || base.chat,
-      news: early ? base.news : pickSalt(st, blurbs, 29) || base.news,
+      news,
       policy,
       life,
     });
@@ -1902,6 +2003,13 @@
     if (pulse.life && pulse.life.cash) {
       st.cash = +(st.cash + pulse.life.cash).toFixed(2);
       if (st.cash < 0) st.cash = 0;
+      touchCash(st);
+      st.log.push({
+        t: "life",
+        week: st.week,
+        name: pulse.life.name,
+        cash: pulse.life.cash,
+      });
     }
     if (pulse.market) {
       learn(st, pulse.market.term || "policy", true);
@@ -1930,6 +2038,7 @@
     const lastM = st.flags.lastMarketPulse || "";
     const lastL = st.flags.lastLifePulse || "";
     const dueSoon = weekInMonth(w) === WEEKS_PER_MONTH;
+    const d = diffOf(st);
     let market = null;
     let life = null;
     if (hasPolicy) {
@@ -1937,7 +2046,8 @@
     } else if (rng() < 0.55) {
       market = pickMarketPulse(st, rng, lastM, dueSoon);
     }
-    if (rng() < 0.5) life = pickLifePulse(st, rng, dueSoon, lastL);
+    const lifeChance = d.lifeP + (d.id === "hard" && w >= 2 ? 0.08 : 0);
+    if (rng() < lifeChance) life = pickLifePulse(st, rng, dueSoon, lastL);
     if (market) st.flags.lastMarketPulse = market.name;
     if (life) st.flags.lastLifePulse = life.name;
     return { week: w, market, life };
@@ -1959,11 +2069,15 @@
   }
 
   function pickLifePulse(st, rng, dueSoon, last) {
+    const d = diffOf(st);
     let pool = LIFE_PULSE.filter((p) => p.name !== last);
-    if (dueSoon) pool = pool.filter((p) => !(p.cash < 0 && Math.abs(p.cash) > 800));
+    const cut = d.id === "hard" ? 4200 : 800;
+    if (dueSoon) pool = pool.filter((p) => !(p.cash < 0 && Math.abs(p.cash) > cut));
     pool = pool.filter((p) => currentMonth(st) >= (p.minMonth || 1));
     const hit = pool[Math.floor(rng() * pool.length)] || pool[0] || LIFE_PULSE[0];
-    return Object.assign({}, hit);
+    const scaled = Object.assign({}, hit);
+    if (scaled.cash) scaled.cash = Math.round(scaled.cash * d.lifeScale);
+    return scaled;
   }
 
   function mulberry32(seed) {
@@ -2124,11 +2238,24 @@
     const dd = (n - state.peakNav) / state.peakNav;
     if (dd < state.maxDD) state.maxDD = dd;
     if (dd <= -0.12) learn(state, "drawdown");
+    if (state.minCash == null || state.cash < state.minCash) state.minCash = state.cash;
+  }
+
+  function touchCash(state) {
+    markNav(state);
   }
 
   function learn(state, key, silent) {
     if (!key || state.learned[key] || !TERMS[key]) return;
     state.learned[key] = true;
+    const meta = loadMeta();
+    const ever = Object.assign({}, meta.termsEver || {});
+    ever[key] = true;
+    const n = Object.keys(ever).length;
+    saveMeta({
+      termsEver: ever,
+      hardUnlocked: meta.hardUnlocked || n >= HARD_TERMS || (meta.bestMonths || 0) >= 3,
+    });
     if (silent) return;
     state.wallFlash = key;
     state.wallBadge = true;
@@ -2138,6 +2265,26 @@
         renderWall();
       }
     }, 1800);
+  }
+
+  function forceTerm(state, key, title, body) {
+    if (!key || state.flags["force-" + key]) return;
+    state.flags["force-" + key] = true;
+    learn(state, key);
+    state.sheet = { kind: "look", title: title, body: body, term: key };
+  }
+
+  function nameRoom(state, c) {
+    const cap = diffOf(state).nameCap;
+    if (cap >= 0.999) return Infinity;
+    const maxVal = startCashOf(state) * cap;
+    const now = (c.shares || 0) * quoteOf(c);
+    return Math.max(0, maxVal - now);
+  }
+
+  function investableCash(state) {
+    const reserve = rentOf(currentMonth(state)) * (diffOf(state).rentReserve || 0);
+    return Math.max(0, state.cash - reserve);
   }
 
   function applyWeekPrices(state, rng) {
@@ -2257,7 +2404,7 @@
   }
 
   function gemUnlocked(state) {
-    return !!(state.flags.gemOpen || navOf(state) >= GEM_NAV);
+    return !!(state.flags.gemOpen || navOf(state) >= gemNavOf(state));
   }
 
   function boardOpen(state, sectorId) {
@@ -2533,7 +2680,7 @@
   }
 
   function checkBoards(state) {
-    if (navOf(state) >= GEM_NAV && !state.flags.gemOpen) {
+    if (navOf(state) >= gemNavOf(state) && !state.flags.gemOpen) {
       state.flags.gemOpen = true;
       learn(state, "eligibility");
       learn(state, "rotation", true);
@@ -3022,7 +3169,12 @@
     state.flags.usedLeverage = true;
     learn(state, "leverage");
     toast(state, "融到 " + money(take) + "。周息百分之二。不是你的钱。");
-    state.sheet = null;
+    forceTerm(
+      state,
+      "leverage",
+      "借来的仓位",
+      "向邻居借钱进货。货砸在手里，邻居要的还是本金，外加一点谢礼。他不问货还在不在。保证金不够时会被强行卖掉。"
+    );
     markNav(state);
   }
 
@@ -3109,7 +3261,7 @@
           ? "活到第 " + c.unlockMonth + " 个月才开。"
           : (sec ? sec.name : "这个板块") +
               "还没开通。净值满 " +
-              money(GEM_NAV) +
+              money(gemNavOf(state)) +
               " 才有资格。"
       );
       state.sheet = {
@@ -3120,19 +3272,29 @@
           : "现在净值 " +
             money(navOf(state)) +
             "。差 " +
-            money(Math.max(0, GEM_NAV - navOf(state))) +
+            money(Math.max(0, gemNavOf(state) - navOf(state))) +
             "。门槛不问你会不会看K线，只问这点钱亏得起吗。",
         term: term || "eligibility",
       };
       return;
     }
     const lot = c.lot || 1;
-    const budget = state.cash * fraction;
     const px = quoteOf(c);
     const one = px * lot;
+    const room = nameRoom(state, c);
+    const investable = investableCash(state);
+    let budget = Math.min(state.cash * fraction, investable, room);
     if (budget < one) {
       learn(state, "lot");
-      toast(state, "一手 " + lot + " 股，要 " + money(one) + "。这点钱不够买进。");
+      if (room < one) {
+        toast(state, "这一只已经够重了。再买，房租会绑在同一句话上。");
+        learn(state, "concentration");
+      } else if (investable < one) {
+        toast(state, "房租那一截动不了。全仓也不能把房东的钱买成股票。");
+        learn(state, "cash");
+      } else {
+        toast(state, "一手 " + lot + " 股，要 " + money(one) + "。这点钱不够买进。");
+      }
       return;
     }
     if (fraction >= 0.99) learn(state, "allin");
@@ -3145,7 +3307,18 @@
     state.actionsLeft -= 1;
     state.sheet = null;
     afterTrade(state, "buy", c, spent, 0, shares);
+    if (fraction >= 0.99 || weightOf(state, c.id) >= 0.55) {
+      forceTerm(
+        state,
+        "allin",
+        "你刚按了最大的那个",
+        "全仓是把能用的钱几乎全部变成股票。这一只现在有上限：生活费的 " +
+          Math.round(diffOf(state).nameCap * 100) +
+          "% 封顶。剩下的，有的是房东的。比方说：把下个月吃饭钱也打进去。中了你是英雄。没中你去睡走廊。"
+      );
+    }
     checkBoards(state);
+    touchCash(state);
   }
 
   function sell(state, id, fraction, free) {
@@ -3187,7 +3360,7 @@
     const lot = c.lot || 1;
     const px = quoteOf(c);
     const one = px * lot;
-    const budget = Math.min(dca.amt, state.cash);
+    const budget = Math.min(dca.amt, investableCash(state), nameRoom(state, c));
     if (budget < one) {
       toast(state, "定投跳过：现金不够一手 " + money(one) + "。");
       learn(state, "dca", true);
@@ -3212,7 +3385,7 @@
     learn(state, "dca");
     learn(state, "avgCost", true);
     toast(state, "定投成交 · " + c.name + " · " + shares + " 股 · " + money(spent));
-    markNav(state);
+    touchCash(state);
     checkBoards(state);
   }
 
@@ -3414,17 +3587,192 @@
       );
     }
     toast(state, "房租 " + money(due) + " 已交。剩下的带到下个月。");
+    touchCash(state);
     enterNextMonth(state);
   }
 
-  function evict(state) {
-    state.flags.evicted = true;
-    noteSharp(
-      state,
-      "evicted",
-      "这个月交不起房租。股票再漂亮，房东只要现金。出局的人没有下一句术语。"
+  function topWeight(state) {
+    let top = 0;
+    for (const c of state.companies || []) {
+      const w = weightOf(state, c.id);
+      if (w > top) top = w;
+    }
+    return top;
+  }
+
+  function classifyDeath(state) {
+    const due = rentOf(currentMonth(state));
+    const nav = navOf(state);
+    const stockVal = (state.companies || []).reduce((s, c) => s + c.shares * c.price, 0);
+    const dcaBuys = (state.log || []).filter((t) => t.t === "buy" && t.dca).length;
+    const allinBuys = (state.log || []).filter((t) => t.t === "buy" && (t.weight || 0) >= 0.55);
+    const lastLife = [...(state.log || [])].reverse().find((t) => t.t === "life");
+    if (state.flags.usedLeverage || state.flags.marginCalled) return "leverage";
+    if (allinBuys.length && topWeight(state) >= 0.5) return "allin";
+    if (state.dca && dcaBuys >= 3) return "dca";
+    if (nav >= due * 1.6 && state.cash < due) return "paper";
+    if (lastLife && lastLife.cash < 0 && state.cash + Math.abs(lastLife.cash) >= due) return "life";
+    if (stockVal >= due && state.cash < due) return "paper";
+    return "broke";
+  }
+
+  function deathCopy(kind, state) {
+    const nav = navOf(state);
+    const due = rentOf(currentMonth(state));
+    const lines = {
+      allin: {
+        title: "全仓死的",
+        line: "最大的那个按钮按下去了。行情没有回礼。这个月的房租先走了。",
+      },
+      dca: {
+        title: "定投死的",
+        line: "每周定额买，不论涨跌。摊平了成本，也摊平了交租的现金。房东不按周收均价。",
+      },
+      leverage: {
+        title: "借来的胆子",
+        line: "融资在涨的时候像勇气。交租那天，勇气先走，房东还在。借来的仓位从来不是你的。",
+      },
+      paper: {
+        title: "账上很富，口袋很穷",
+        line:
+          "净值 " +
+          money(nav) +
+          "。房租只要 " +
+          money(due) +
+          "。股票还在。现金没有。房东不收浮盈。",
+      },
+      life: {
+        title: "不是行情杀的",
+        line: "市场之外还有生活在消耗你。家人、合租、牙齿、被骗。K线不管这些。",
+      },
+      broke: {
+        title: "这个月交不起",
+        line: "股票还在。现金没有。房东不收K线。输赢线从来不是涨跌，是下个月还住不住。",
+      },
+    };
+    return lines[kind] || lines.broke;
+  }
+
+  function surviveTitle(months) {
+    if (months >= 12) return "学费交在游戏里";
+    if (months >= 9) return "还住着的人";
+    if (months >= 6) return "活过半年";
+    if (months >= 3) return "交过一季房租";
+    if (months >= 1) return "还没被请走";
+    return "刚把门打开";
+  }
+
+  function collectAchievements(state) {
+    const months = state.monthsPaid || 0;
+    const alive = !state.flags.evicted;
+    const allin = (state.log || []).some((t) => t.t === "buy" && (t.weight || 0) >= 0.7) || state.flags.alledInPeak;
+    const dcaBuys = (state.log || []).filter((t) => t.t === "buy" && t.dca).length;
+    const looks = (state.log || []).filter((t) => t.t === "look").length;
+    const terms = Object.keys(state.learned || {}).length;
+    const out = [];
+    if (alive && months >= 6 && !allin) {
+      out.push({ id: "no-allin", title: "没按过最大的那个", body: "从未全仓，活过 6 个月。" });
+    }
+    if (alive && months >= 3 && dcaBuys >= 6 && (state.log || []).filter((t) => t.t === "buy" && !t.dca && !t.swap).length <= 1) {
+      out.push({ id: "dca-monk", title: "只定投", body: "几乎只靠每周定额买，活过一季。" });
+    }
+    if (alive && months >= 3 && state.flags.usedLeverage && state.flags.marginCalled) {
+      out.push({ id: "lev-live", title: "被强平过还住着", body: "杠杆用到极限，房租还是交上了。" });
+    }
+    if (alive && months >= 1 && state.peakNav >= startCashOf(state) * 1.25 && state.maxDD <= -0.18) {
+      out.push({ id: "paper-live", title: "浮过、撤过、还在", body: "净值风光过，回撤也疼过，现金仍够交租。" });
+    }
+    if (terms >= 12) {
+      out.push({ id: "lexicon", title: "词是玩出来的", body: "一局里记下 12 个词。不是背的。" });
+    }
+    if (alive && looks >= 8 && months >= 3) {
+      out.push({ id: "looker", title: "先看店的人", body: "看店比出手勤。群不会理解。" });
+    }
+    const meta = loadMeta();
+    const got = Object.assign({}, meta.achievements || {});
+    out.forEach((a) => {
+      got[a.id] = true;
+    });
+    saveMeta({ achievements: got });
+    return out;
+  }
+
+  function timelineOf(state) {
+    const rows = [];
+    for (const t of state.log || []) {
+      if (t.t === "buy") {
+        rows.push(
+          "第 " +
+            t.week +
+            " 周 · 买 " +
+            t.name +
+            " " +
+            money(t.amount) +
+            (t.dca ? "（定投）" : t.swap ? "（换仓）" : "")
+        );
+      } else if (t.t === "sell") {
+        rows.push(
+          "第 " +
+            t.week +
+            " 周 · 卖 " +
+            t.name +
+            " · " +
+            (t.forced ? "被强平 " : t.pnl >= 0 ? "落袋 " : "止损 ") +
+            money(t.pnl || t.amount)
+        );
+      } else if (t.t === "rent") {
+        rows.push("第 " + t.week + " 周 · 交房租 " + money(t.amount));
+      } else if (t.t === "life") {
+        rows.push(
+          "第 " +
+            t.week +
+            " 周 · 生活费 · " +
+            t.name +
+            (t.cash ? " " + (t.cash > 0 ? "+" : "") + money(t.cash) : "")
+        );
+      }
+    }
+    return rows.slice(-14);
+  }
+
+  function lifeWayText(state, ending) {
+    const months = state.monthsPaid || 0;
+    const nav = (state.report && state.report.nav) || navOf(state);
+    const ret = (state.report && state.report.ret) || nav / startCashOf(state) - 1;
+    const dcaN = (state.log || []).filter((t) => t.t === "buy" && t.dca).length;
+    const top = topWeight(state);
+    return (
+      "我在《生活费》里的活法：\n" +
+      "难度「" +
+      diffOf(state).name +
+      "」· 活过 " +
+      months +
+      " 个月 · " +
+      ((ending && ending.title) || surviveTitle(months)) +
+      "\n" +
+      "开工 " +
+      money(startCashOf(state)) +
+      " → 净值 " +
+      money(nav) +
+      "（" +
+      pct(ret) +
+      "）\n" +
+      "最大仓位 " +
+      pct(top) +
+      " · " +
+      (state.flags.usedLeverage ? "用过杠杆" : "没用杠杆") +
+      " · 定投 " +
+      dcaN +
+      " 次\n" +
+      "最大回撤 " +
+      pct(state.maxDD) +
+      " · 现金最低 " +
+      money(state.minCash == null ? startCashOf(state) : state.minCash) +
+      "\n" +
+      (state.flags.evicted ? "这个月交不起房租。" : "还住着。") +
+      " 我活下来了，你呢？\n" +
+      "不是投资建议。#生活费"
     );
-    finish(state);
   }
 
   function keyMoves(state) {
@@ -3514,6 +3862,33 @@
         "未来付不出这个月",
         "本局称号",
         "数字金币没有下午五点。你把房租押在没有进账的价钱上。真股市里有人用几十亿才学会。",
+        true
+      );
+    }
+    if (lost && state.dca && (state.log || []).filter((t) => t.t === "buy" && t.dca).length >= 3) {
+      add(
+        97,
+        "定投死的",
+        "本局称号",
+        "每周定额买，不论涨跌。摊平了成本，也摊平了交租的现金。房东不按周收均价。",
+        true
+      );
+    }
+    if (lost && nav >= rentOf(currentMonth(state)) * 1.5) {
+      add(
+        97.5,
+        "账上很富，口袋很穷",
+        "本局称号",
+        "净值还在。现金没有。浮盈交不出房租。这是最常见的死法，也是最不服的那种。",
+        true
+      );
+    }
+    if (lost && (state.log || []).some((t) => t.t === "life" && t.cash < 0)) {
+      add(
+        96.5,
+        "不是行情杀的",
+        "本局称号",
+        "家人要钱、合租清算、牙齿裂了。市场之外还有生活。K线不管这些。",
         true
       );
     }
@@ -3712,12 +4087,12 @@
         "净值低于开工，这个月房租还交得上。你可以继续。出局的人没有下一局，也没有下一句毒舌。"
       );
     }
-    if (rentOk) {
+    if (!lost && months >= 1) {
       add(
-        40,
-        "还没资格被群记住",
+        41,
+        surviveTitle(months),
         "本局称号",
-        "你还在交租。不够传奇，不够惨烈。对房租来说，这已经是最高评价。"
+        "活过 " + months + " 个月。称号跟着房租走，不跟着热搜走。"
       );
     }
     rows.sort((a, b) => b.score - a.score);
@@ -3728,13 +4103,20 @@
     state.ended = true;
     learn(state, "nav", true);
     const nav = navOf(state);
-    const ret = nav / START_CASH - 1;
+    const ret = nav / startCashOf(state) - 1;
     const unreal = state.companies.reduce((s, c) => s + unrealizedOf(c), 0);
+    if (state.flags.evicted && !state.flags.deathKind) {
+      state.flags.deathKind = classifyDeath(state);
+    }
     const ending = roastOf(state, nav, ret);
+    if (state.flags.evicted) {
+      const dead = deathCopy(state.flags.deathKind, state);
+      ending.title = dead.title;
+      ending.body = dead.line;
+      ending.lost = true;
+    }
     if (state.journal.length === 0) {
-      state.journal.push(
-        "这一年你主要在听群。群很热闹。热闹很少是免费的。"
-      );
+      state.journal.push("这一年你主要在听群。群很热闹。热闹很少是免费的。");
     }
     if (ret > 0.15 && state.flags.alledInPeak) {
       state.journal.push("你赚到了。那是运气和胆量叠在一起。胆量下次不一定还在。");
@@ -3751,6 +4133,14 @@
           " 个月。主线从来不是当狼，是别把真钱交成几十亿学费。"
       );
     }
+    const ach = collectAchievements(state);
+    const meta = loadMeta();
+    saveMeta({
+      bestMonths: Math.max(meta.bestMonths || 0, state.monthsPaid || 0),
+      plays: (meta.plays || 0) + 1,
+      hardUnlocked: meta.hardUnlocked || hardUnlocked() || (state.monthsPaid || 0) >= 3,
+      lastDeath: state.flags.evicted ? state.flags.deathKind : "",
+    });
     state.report = {
       nav,
       ret,
@@ -3759,8 +4149,22 @@
       unreal,
       moves: keyMoves(state),
       ending,
+      minCash: state.minCash,
+      deathKind: state.flags.deathKind || "",
+      achievements: ach,
+      timeline: timelineOf(state),
     };
     state.share = makeShare(nav, ret, state, ending);
+    state.lifeWay = lifeWayText(state, ending);
+  }
+
+  function evict(state) {
+    state.flags.evicted = true;
+    state.flags.deathKind = classifyDeath(state);
+    const dead = deathCopy(state.flags.deathKind, state);
+    noteSharp(state, "evicted", dead.line);
+    state.scene = "evicted";
+    finish(state);
   }
 
   function rentSafe(state) {
@@ -3768,26 +4172,32 @@
   }
 
   function makeShare(nav, ret, state, ending) {
-    const sharp = (ending && ending.title) || "还没资格被群记住";
+    const sharp = (ending && ending.title) || surviveTitle(state.monthsPaid || 0);
     const line = (ending && ending.body) || "";
     const months = state.monthsPaid || 0;
     return `我在《生活费》里活成了「${sharp}」。
 ${line}
-开工 ${money(START_CASH)} → 现在 ${money(nav)}（${pct(ret)}）
-交过 ${months} 个月房租${state.flags.evicted ? " · 这个月交不起" : " · 还住着"} · 最大回撤 ${pct(state.maxDD)}
+开工 ${money(startCashOf(state))} → 现在 ${money(nav)}（${pct(ret)}）
+交过 ${months} 个月房租${state.flags.evicted ? " · 这个月交不起" : " · 还住着"} · 最大回撤 ${pct(state.maxDD)} · 现金最低 ${money(state.minCash == null ? startCashOf(state) : state.minCash)}
 不是投资建议。是在玩里先学会，别拿真钱交学费。 #生活费`;
   }
 
-  function newGame() {
+  function newGame(diffId) {
+    const d = DIFFS[diffId] || DIFFS.std;
+    const meta = loadMeta();
     const seed = (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
     const rng = mulberry32(seed);
     const state = {
       seed,
       rng,
-      scene: "splash",
+      diff: d.id,
+      startCash: d.start,
+      rentBase: d.rent,
+      scene: meta.seenIntro ? "pick" : "intro",
+      introStep: 0,
       week: 1,
       actionsLeft: ACTIONS,
-      cash: START_CASH,
+      cash: d.start,
       companies: makeCompanies(rng),
       tape: makeTape(rng),
       wire: dealNews(),
@@ -3807,14 +4217,16 @@ ${line}
       learned: {},
       log: [],
       realized: 0,
-      peakNav: START_CASH,
+      peakNav: d.start,
       maxDD: 0,
+      minCash: d.start,
       monthsPaid: 0,
       rentPaidTotal: 0,
       debt: 0,
       ended: false,
       copied: false,
       share: "",
+      lifeWay: "",
       report: null,
       dca: null,
       pulse: null,
@@ -3845,36 +4257,115 @@ ${line}
     </div>`;
   }
 
-  function renderSplash() {
+  function renderIntro() {
+    const lines = [
+      "你口袋里有八万。",
+      "房东下个月要八千。",
+      "股票涨了不能当房租。",
+    ];
+    const step = Math.min(state.introStep || 0, lines.length);
+    const shown = lines
+      .slice(0, step + 1)
+      .map((t, i) => `<p class="intro-line${i === step ? " now" : ""}">${t}</p>`)
+      .join("");
+    const done = step >= lines.length - 1;
     return `
-      <section class="screen splash">
+      <section class="screen intro" data-act="intro-next">
+        <div class="kicker">城南 · 一间出租屋</div>
+        ${shown}
+        ${
+          done
+            ? `<button class="primary" data-act="intro-done">我听见了</button>`
+            : `<p class="fine">点一下，往下听。</p>`
+        }
+      </section>`;
+  }
+
+  function renderPick() {
+    const alive = survivorsThisWeek();
+    const hardOn = hardUnlocked();
+    const meta = loadMeta();
+    const nTerms = Object.keys(meta.termsEver || {}).length;
+    const cards = ["easy", "std", "hard"]
+      .map((id) => {
+        const d = DIFFS[id];
+        const lock = id === "hard" && !hardOn;
+        return `<button class="diff-card${lock ? " locked" : ""}" data-act="pick-diff" data-id="${id}">
+          <b>${d.name}</b>
+          <span>${d.blurb}</span>
+          <em>开工 ${money(d.start)} · 房租 ${money(d.rent)}${
+            d.nameCap < 1 ? " · 单只最多 " + Math.round(d.nameCap * 100) + "%" : " · 全仓不封顶"
+          }</em>
+          ${lock ? `<i>学会 ${HARD_TERMS} 个词，或活过 3 个月（已记下 ${nTerms}）</i>` : ""}
+        </button>`;
+      })
+      .join("");
+    return `
+      <section class="screen splash pick">
         <div>
           <div class="kicker">城南 · 一间出租屋</div>
           <h1>生活费</h1>
           <p class="lede">这个月你要<em>交房租</em>。交不起就出局。股票带不走房租。</p>
-          <p class="lede">街上先只开<em>两家店</em>。点「看店」弄清它为什么涨，再决定把生活费押哪家。</p>
-          <p class="fine">交不起房租就出局。股票可以带走，房东只要现金。不是投资建议。</p>
+          <p class="crowd-line">本周还有 <em>${alive}</em> 个人住着。没有排行榜。活下来的人也不比你更聪明。</p>
         </div>
-        <button class="primary" data-act="boot">打开账本</button>
+        <div class="diff-list">${cards}</div>
+        ${renderToasts()}
       </section>`;
   }
 
   function renderTransfer() {
+    const start = startCashOf(state);
+    const due = rentOf(1);
+    const cap = diffOf(state).nameCap;
     return `
       <section class="screen splash">
         <div>
-          <div class="kicker">把生活费放进来</div>
-          <h1 style="font-size:40px;letter-spacing:0.06em">80,000</h1>
-          <p class="lede">转进去之后，买成店的钱就不能再交房租。这个月只开两家店。你的任务只有一个：月底拿出 ${money(RENT)} 现金给房东。</p>
+          <div class="kicker">${diffOf(state).name} · 把生活费放进来</div>
+          <h1 style="font-size:40px;letter-spacing:0.06em">${start.toLocaleString("zh-CN")}</h1>
+          <p class="lede">转进去之后，买成店的钱就不能再交房租。${
+            cap >= 0.999
+              ? "这一档，全仓可以把房租买进去。"
+              : "满仓某一只，最多到生活费的 " + Math.round(cap * 100) + "%。"
+          }这个月只开两家店。你的任务只有一个：月底拿出 ${money(due)} 现金给房东。</p>
           <p class="fine">看店免费。买卖每周两次。先看，再押。活过这个月，街上才会再开门。</p>
         </div>
         <button class="primary" data-act="start">确认转入生活费</button>
       </section>`;
   }
 
+  function renderEvicted() {
+    const dead = deathCopy(state.flags.deathKind || "broke", state);
+    const nav = navOf(state);
+    return `
+      <section class="screen evict-screen">
+        <div class="kicker">交租日</div>
+        <h1>出局</h1>
+        <p class="evict-title">${dead.title}</p>
+        <p class="lede">${dead.line}</p>
+        <div class="evict-stats">
+          <span>死前净值 ${money(nav)}</span>
+          <span>最大回撤 ${pct(state.maxDD)}</span>
+          <span>现金最低 ${money(state.minCash == null ? startCashOf(state) : state.minCash)}</span>
+        </div>
+        <button class="primary" data-act="see-death">看这一局怎么死的</button>
+      </section>`;
+  }
+
   function renderSheet() {
     if (!state.sheet) return "";
     const s = state.sheet;
+    if (s.kind === "goal") {
+      const due = rentOf(currentMonth(state));
+      return `
+        <div class="sheet" data-act="close-sheet">
+          <div class="sheet-card goal-card" data-stop="1">
+            <div class="mission-kicker">本月必须活下来</div>
+            <h2>交房租 ${money(due)}</h2>
+            <p>房东只要现金。股票涨了不能当房租。这个月只开两家店。先看店，再决定押哪家。</p>
+            <button class="primary" style="margin-top:16px" data-act="close-sheet">去街上</button>
+          </div>
+        </div>`;
+    }
     if (s.kind === "look") {
       return `
         <div class="sheet" data-act="close-sheet">
@@ -3930,8 +4421,8 @@ ${line}
             <h2>借钱买（融资）</h2>
             <p>能借 ${money(room)}。已欠 ${money(state.debt || 0)}。每周要付百分之二的谢礼。不够会被强行卖掉。</p>
             <div class="sizes">
-              <button data-act="borrow" data-amt="${RENT}">借一个月房租</button>
-              <button data-act="borrow" data-amt="${RENT * 2}">借两个月</button>
+              <button data-act="borrow" data-amt="${rentOf(currentMonth(state))}">借一个月房租</button>
+              <button data-act="borrow" data-amt="${rentOf(currentMonth(state)) * 2}">借两个月</button>
               <button class="allin" data-act="borrow" data-amt="${Math.floor(room)}">能借的都借</button>
             </div>
             ${
@@ -4012,6 +4503,13 @@ ${line}
               : ""
           }</p>
           ${
+            s.kind === "buy" && diffOf(state).nameCap < 1
+              ? `<p class="hint">这一只最多到生活费的 ${Math.round(
+                  diffOf(state).nameCap * 100
+                )}%。${diffOf(state).rentReserve ? "房租那一截，全仓也动不了。" : ""}</p>`
+              : ""
+          }
+          ${
             s.kind === "buy" && unlocked(state, "sizing") && held
               ? `<p class="warn">现在仓位：${held} · 现金 ${pct(state.cash / Math.max(1, navOf(state)))}</p>`
               : ""
@@ -4056,7 +4554,7 @@ ${line}
     const el = document.getElementById("wall");
     if (!el) return;
     const playing = state.scene === "play" || state.scene === "rent" || state.ended;
-    const nav = playing ? navOf(state) : START_CASH;
+    const nav = playing ? navOf(state) : startCashOf(state);
     const due = rentOf(currentMonth(state));
     const cashOk = state.cash >= due;
     const got = Object.keys(state.learned).filter((k) => TERMS[k]);
@@ -4175,15 +4673,15 @@ ${line}
         </div>
         <div class="sticky ${cashOk ? "" : "hot"}">
           <b>房东便利贴 · ${leftText}</b>
-          <div class="sticky-nav">现金 ${playing ? money(state.cash) : money(START_CASH)} / 房租 ${money(due)}</div>
-          <div class="bar"><i style="width:${Math.min(100, ((playing ? state.cash : START_CASH) / due) * 100)}%"></i></div>
+          <div class="sticky-nav">现金 ${playing ? money(state.cash) : money(startCashOf(state))} / 房租 ${money(due)}</div>
+          <div class="bar"><i style="width:${Math.min(100, ((playing ? state.cash : startCashOf(state)) / due) * 100)}%"></i></div>
           <p>${note}</p>
         </div>
         <div class="unlocks">${unlocks}</div>
         ${
           playing
             ? `<button class="ask" data-act="ask-week"><i>本周只问一句</i><b>${ask.q}</b></button>`
-            : `<p class="wall-idle">把八万转进来。墙上才会开始记词。</p>`
+            : `<p class="wall-idle">把生活费转进来。墙上才会开始记词。</p>`
         }
         ${
           playing && currentMonth(state) >= 2
@@ -4444,6 +4942,9 @@ ${line}
       (t) => t.week === state.week && (t.t === "buy" || t.t === "sell" || t.swap)
     );
     const rentNow = wim === WEEKS_PER_MONTH;
+    const fog = fogOf(state);
+    const must = fog[0];
+    const mustWord = must && TERMS[must] ? TERMS[must].word.split(" / ")[0] : "";
     return `
       <div class="mission">
         <div class="mission-kicker">这个月只要做成一件事</div>
@@ -4457,6 +4958,13 @@ ${line}
               : "活过这周 · 距交租 " + (WEEKS_PER_MONTH - wim) + " 周"
           }</li>
         </ol>
+        ${
+          must
+            ? `<button type="button" class="must-word" data-act="must-word" data-id="${must}">本周必懂 · ${
+                mustWord || RIDDLE[must]
+              } · 你可能还没看懂这个机制</button>`
+            : ""
+        }
       </div>`;
   }
 
@@ -4481,7 +4989,7 @@ ${line}
   function renderPlay() {
     ensureBoard(state);
     const nav = navOf(state);
-    const ret = nav / START_CASH - 1;
+    const ret = nav / startCashOf(state) - 1;
     const script = flavoredScript(state);
     const busy = state.actionsLeft <= 0 ? "disabled" : "";
     const board = sectorOf(state.board) || SECTORS[1];
@@ -4589,7 +5097,8 @@ ${line}
   }
 
   function renderRecap() {
-    const r = state.report;
+    const r = state.report || {};
+    const lost = !!(r.ending && r.ending.lost);
     const holdings = state.companies
       .filter((c) => c.shares > 0)
       .map(
@@ -4611,24 +5120,43 @@ ${line}
       )
       .join("");
     const items = state.journal.map((j) => `<li>${j}</li>`).join("");
+    const ach = (r.achievements || [])
+      .map((a) => `<div class="move"><div class="when">${a.title}</div><p>${a.body}</p></div>`)
+      .join("");
+    const tl = (r.timeline || []).map((t) => `<li>${t}</li>`).join("");
+    const cert =
+      (state.monthsPaid || 0) >= 1
+        ? `<div class="cert">
+            <div class="mission-kicker">${lost ? "死亡证明" : "存活证明"} · ${diffOf(state).name}</div>
+            <b>${r.ending ? r.ending.title : surviveTitle(state.monthsPaid || 0)}</b>
+            <p>活过 ${state.monthsPaid || 0} 个月 · 最大仓位 ${pct(topWeight(state))} · ${
+              state.flags.usedLeverage ? "用过杠杆" : "没用杠杆"
+            } · 定投 ${(state.log || []).filter((t) => t.dca).length} 次</p>
+            <p>净值 ${money(r.nav)} · 回撤 ${pct(state.maxDD)} · 现金最低 ${money(
+              r.minCash == null ? startCashOf(state) : r.minCash
+            )}</p>
+          </div>`
+        : "";
 
     return `
       <section class="screen recap">
-        <div class="kicker">${r.ending && r.ending.lost ? "这个月交不起" : "还住着"} · 疯牛谥号</div>
+        <div class="kicker">${lost ? "这个月交不起" : "还住着"} · ${diffOf(state).name}</div>
         <p class="roast-label">本局称号</p>
-        <h1 class="roast">「${r.ending ? r.ending.title : "还没资格被群记住"}」</h1>
+        <h1 class="roast">「${r.ending ? r.ending.title : surviveTitle(state.monthsPaid || 0)}」</h1>
         <p class="lede">${r.ending ? r.ending.body : "群已经改口了。房东不会。"}</p>
+        <p class="crowd-line">本周还有 <em>${survivorsThisWeek()}</em> 个人住着。我活下来了，你呢？</p>
+        ${cert}
 
-        <div class="recap-sec">活了多久</div>
+        <div class="recap-sec">复盘摘要</div>
         <table class="report">
-          <tr><th>期初生活费</th><td>${money(START_CASH)}</td></tr>
-          <tr><th>现在净值</th><td>${money(r.nav)}</td></tr>
+          <tr><th>期初生活费</th><td>${money(startCashOf(state))}</td></tr>
+          <tr><th>死前 / 现在净值</th><td>${money(r.nav)}</td></tr>
           <tr><th>收益率</th><td class="pnl ${r.ret >= 0 ? "up" : "down"}">${pct(r.ret)}</td></tr>
           <tr><th>最大回撤</th><td class="pnl down">${pct(state.maxDD)}</td></tr>
+          <tr><th>现金最低掉到</th><td class="pnl down">${money(r.minCash == null ? startCashOf(state) : r.minCash)}</td></tr>
           <tr><th>已实现盈亏</th><td class="pnl ${r.realized >= 0 ? "up" : "down"}">${money(r.realized)}</td></tr>
-          <tr><th>未实现浮盈亏</th><td class="pnl ${r.unreal >= 0 ? "up" : "down"}">${money(r.unreal)}</td></tr>
           <tr><th>现金 / 欠款</th><td>${money(state.cash)} / ${money(state.debt || 0)}</td></tr>
-          <tr><th>交过房租</th><td class="pnl ${state.flags.evicted ? "down" : "up"}">${state.monthsPaid || 0} 个月 · 共 ${money(state.rentPaidTotal || 0)}</td></tr>
+          <tr><th>交过房租</th><td class="pnl ${lost ? "down" : "up"}">${state.monthsPaid || 0} 个月 · 共 ${money(state.rentPaidTotal || 0)}</td></tr>
         </table>
         ${
           holdings
@@ -4639,13 +5167,22 @@ ${line}
         <div class="recap-sec">关键出手</div>
         ${moves || `<p class="missed">这一年几乎没有出手。看，也是一种仓位。</p>`}
 
+        <div class="recap-sec">本局关键决策时间线</div>
+        <ul class="journal">${tl || `<li>这一局几乎没有留下痕迹。</li>`}</ul>
+
+        ${ach ? `<div class="recap-sec">藏起来的评价</div>${ach}` : ""}
+
         <div class="recap-sec">判断</div>
         <ul class="journal">${items}</ul>
 
         <div class="share-box">${state.share}</div>
         <button class="primary" data-act="copy">${
-          state.copied ? "已复制" : "复制这段，发到任何地方"
+          state.copied === "share" ? "已复制" : "复制这段，发到任何地方"
         }</button>
+        <button class="primary" data-act="copy-way">${
+          state.copied === "way" ? "已复制我的活法" : "复制「我的活法」"
+        }</button>
+        <button class="ghost" data-act="shot">${lost ? "生成死亡截图" : "生成存活证明"}</button>
         <button class="ghost" data-act="again">再活一局</button>
       </section>`;
   }
@@ -4695,7 +5232,7 @@ ${line}
               ? `<button class="primary wait" data-act="pay-rent">交房租 ${money(due)}</button>`
               : canRaise
                 ? `<p class="warn">现金不够。先卖掉一些。卖掉不花回合。</p>`
-                : `<button class="primary wait" data-act="evict">我交不起</button>`
+                : `<p class="warn">现金不够，卖掉也不够。股票带不走房租。</p><button class="evict-btn" data-act="evict">承认：这个月交不起</button>`
           }
         </div>
         ${renderSheet()}
@@ -4704,16 +5241,109 @@ ${line}
       </section>`;
   }
 
+  let introTimer = 0;
+  function queueIntro() {
+    clearTimeout(introTimer);
+    if (!state || state.scene !== "intro") return;
+    if ((state.introStep || 0) >= 2) return;
+    introTimer = setTimeout(() => {
+      if (state.scene !== "intro") return;
+      if ((state.introStep || 0) < 2) {
+        state.introStep = (state.introStep || 0) + 1;
+        render();
+      }
+    }, 5200);
+  }
+
+  function shareCard() {
+    const r = state.report || {};
+    const lost = !!(state.flags.evicted);
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 1200;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#efe4d0";
+    ctx.fillRect(0, 0, 900, 1200);
+    ctx.fillStyle = "#fbf6ea";
+    ctx.fillRect(48, 48, 804, 1104);
+    ctx.strokeStyle = "#b54432";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(70, 70, 760, 1060);
+    ctx.fillStyle = "#b54432";
+    ctx.font = "700 28px sans-serif";
+    ctx.fillText(lost ? "出局" : "存活证明", 110, 160);
+    ctx.fillStyle = "#2a2118";
+    ctx.font = "500 48px serif";
+    const title = (r.ending && r.ending.title) || surviveTitle(state.monthsPaid || 0);
+    ctx.fillText("「" + title + "」", 110, 240);
+    ctx.font = "16px sans-serif";
+    ctx.fillStyle = "#5c4e3e";
+    const body = (r.ending && r.ending.body) || "";
+    wrapText(ctx, body, 110, 300, 680, 28);
+    ctx.fillStyle = "#2a2118";
+    ctx.font = "20px sans-serif";
+    const lines = [
+      "难度 " + diffOf(state).name,
+      "活过 " + (state.monthsPaid || 0) + " 个月",
+      "净值 " + money(r.nav || navOf(state)),
+      "最大回撤 " + pct(state.maxDD),
+      "现金最低 " + money(r.minCash == null ? startCashOf(state) : r.minCash),
+      "最大仓位 " + pct(topWeight(state)),
+      state.flags.usedLeverage ? "用过杠杆" : "没用杠杆",
+      "定投 " + (state.log || []).filter((t) => t.dca).length + " 次",
+    ];
+    lines.forEach((t, i) => ctx.fillText(t, 110, 520 + i * 44));
+    ctx.fillStyle = "#6f5f4c";
+    ctx.font = "16px sans-serif";
+    ctx.fillText("《生活费》· 不是投资建议 · 我活下来了，你呢？", 110, 1080);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("blob"));
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = lost ? "生活费-出局.png" : "生活费-存活证明.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        toast(state, "图已保存。发朋友圈或小红书都行。");
+        resolve();
+      }, "image/png");
+    });
+  }
+
+  function wrapText(ctx, text, x, y, max, lh) {
+    const chars = (text || "").split("");
+    let line = "";
+    let yy = y;
+    for (let i = 0; i < chars.length; i++) {
+      const test = line + chars[i];
+      if (ctx.measureText(test).width > max) {
+        ctx.fillText(line, x, yy);
+        line = chars[i];
+        yy += lh;
+      } else line = test;
+    }
+    if (line) ctx.fillText(line, x, yy);
+  }
+
   function render() {
     const root = document.getElementById("root");
-    if (state.scene === "splash") root.innerHTML = renderSplash();
+    if (state.scene === "intro") root.innerHTML = renderIntro();
+    else if (state.scene === "pick") root.innerHTML = renderPick();
     else if (state.scene === "transfer") root.innerHTML = renderTransfer();
+    else if (state.scene === "evicted") root.innerHTML = renderEvicted();
     else if (state.ended) root.innerHTML = renderRecap();
     else if (state.scene === "rent") root.innerHTML = renderRent();
     else if (state.viewStock) root.innerHTML = renderStock();
     else root.innerHTML = renderPlay();
     renderWall();
     bindLive();
+    queueIntro();
   }
 
   document.getElementById("desk").addEventListener("click", async (e) => {
@@ -4730,12 +5360,43 @@ ${line}
     const id = hit.dataset.id;
 
     if (act === "boot") {
-      state.scene = "transfer";
-      learn(state, "position");
+      state.scene = "pick";
+    }
+    if (act === "intro-next") {
+      const n = 2;
+      if ((state.introStep || 0) < n) state.introStep = (state.introStep || 0) + 1;
+    }
+    if (act === "intro-done") {
+      saveMeta({ seenIntro: true });
+      state.scene = "pick";
+    }
+    if (act === "pick-diff") {
+      if (id === "hard" && !hardUnlocked()) {
+        toast(state, "先活过 3 个月，或记下 " + HARD_TERMS + " 个词。狠人档是藏起来的。");
+      } else {
+        state = newGame(id);
+        state.scene = "transfer";
+      }
     }
     if (act === "start") {
       state.scene = "play";
-      learn(state, "nav");
+      state.sheet = {
+        kind: "goal",
+        title: "本月必须活下来",
+      };
+    }
+    if (act === "see-death") state.scene = "recap";
+    if (act === "must-word") {
+      const t = TERMS[id];
+      state.sheet = {
+        kind: "look",
+        title: "本周必懂 · " + ((t && t.word) || "这个机制"),
+        body:
+          "不是强制考试。是提示：你可能还没看懂。" +
+          (t ? t.short : "") +
+          " 点「看店」、买入或卖出，碰上了才会真正记下。",
+        term: state.learned[id] ? id : null,
+      };
     }
     if (act === "close-sheet") state.sheet = null;
     if (act === "close-insight") state.insight = null;
@@ -4801,7 +5462,7 @@ ${line}
               currentMonth(state) +
               " 个月。活得越久，门开得越多。门后不一定是出路。"
             : "开通条件：账户净值满 " +
-              money(GEM_NAV) +
+              money(gemNavOf(state)) +
               "。现在 " +
               money(navOf(state)) +
               "。你可以先看K线。门槛不问技术，只问亏得起吗。开通那天，往往最热闹。";
@@ -4838,7 +5499,7 @@ ${line}
             : sec.gate && sec.gate.type === "month"
               ? "这个板块要活到第 " + sec.gate.min + " 个月。"
               : "净值满 " +
-                money(GEM_NAV) +
+                money(gemNavOf(state)) +
                 " 才能买创业板。现在 " +
                 money(navOf(state)) +
                 "。隔着玻璃看，也是一种仓位。";
@@ -4918,9 +5579,13 @@ ${line}
       }
       nextWeek(state);
     }
-    if (act === "again") state = newGame();
-    if (act === "copy") {
-      const text = state.share + "\n" + location.href;
+    if (act === "again") {
+      saveMeta({ seenIntro: true });
+      state = newGame();
+      state.scene = "pick";
+    }
+    if (act === "copy" || act === "copy-way") {
+      const text = (act === "copy-way" ? state.lifeWay || lifeWayText(state, state.report && state.report.ending) : state.share) + "\n" + location.href;
       let ok = false;
       try {
         if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
@@ -4944,8 +5609,15 @@ ${line}
           ok = false;
         }
       }
-      state.copied = ok;
+      state.copied = ok ? (act === "copy-way" ? "way" : "share") : false;
       if (!ok) toast(state, "复制失败。结局页那段文字可以长按选中。");
+    }
+    if (act === "shot") {
+      try {
+        await shareCard();
+      } catch (err) {
+        toast(state, "截图没做成。复制文案也能发。");
+      }
     }
     render();
   });

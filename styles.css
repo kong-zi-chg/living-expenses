@@ -2011,3 +2011,153 @@ button {
     padding: 0 12px;
   }
 }
+
+.intro {
+  justify-content: center;
+  gap: 18px;
+  background:
+    radial-gradient(900px 420px at 50% -12%, rgba(181, 68, 50, 0.16), transparent 62%),
+    linear-gradient(rgba(251, 246, 234, 0.92), rgba(244, 234, 214, 0.96));
+}
+
+.intro-line {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 28px;
+  line-height: 1.45;
+  color: var(--ink);
+  opacity: 0.45;
+}
+
+.intro-line.now {
+  opacity: 1;
+  color: var(--seal);
+}
+
+.crowd-line {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.crowd-line em {
+  font-style: normal;
+  color: var(--seal);
+  font-weight: 700;
+}
+
+.diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.diff-card {
+  text-align: left;
+  background: var(--paper);
+  border-left: 4px solid var(--seal);
+  padding: 12px 14px;
+  box-shadow: 3px 4px 0 rgba(42, 33, 24, 0.12);
+}
+
+.diff-card b {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.diff-card span,
+.diff-card em,
+.diff-card i {
+  display: block;
+  font-style: normal;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  margin-top: 4px;
+}
+
+.diff-card em {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.diff-card.locked {
+  opacity: 0.62;
+  border-left-color: var(--line);
+}
+
+.must-word {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--seal);
+  font-weight: 650;
+}
+
+.evict-screen {
+  justify-content: center;
+  background: #0c0a09;
+  color: #f3e6dc;
+}
+
+.evict-screen .kicker,
+.evict-screen .lede {
+  color: #c9b8a6;
+}
+
+.evict-screen h1 {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 64px;
+  letter-spacing: 0.18em;
+  color: #e23b32;
+  margin: 8px 0 12px;
+}
+
+.evict-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e23b32;
+  margin-bottom: 10px;
+}
+
+.evict-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 18px 0 24px;
+  font-size: 14px;
+  color: #c9b8a6;
+}
+
+.evict-btn {
+  width: 100%;
+  height: 52px;
+  background: #1a1010;
+  color: #e23b32;
+  border: 1px solid #e23b32;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.cert {
+  background: #fffaf0;
+  border: 1px dashed var(--seal);
+  padding: 14px 16px 16px;
+  margin: 14px 0 8px;
+  box-shadow: 3px 4px 0 rgba(42, 33, 24, 0.1);
+}
+
+.cert b {
+  display: block;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 24px;
+  margin: 4px 0 8px;
+}
+
+.goal-card h2 {
+  color: var(--seal);
+}
