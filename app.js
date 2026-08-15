@@ -1996,12 +1996,108 @@
           ? base.news
           : pickSalt(st, blurbs, 29) || base.news;
     return Object.assign({}, base, {
-      title: early ? base.title : pickSalt(st, TITLE_BANK[cw], 41) || base.title,
+      title: pressureTitle(st),
       chat: pickSalt(st, chats, 17) || base.chat,
       news,
       policy,
       life,
     });
+  }
+
+  function pressureTitle(st) {
+    const m = currentMonth(st);
+    const wim = weekInMonth(st.week);
+    const due = rentOf(m);
+    const ratio = due ? (st.cash || 0) / due : 9;
+    const life = st.pulse && st.pulse.life;
+    if ((st.week || 1) <= 4 && WEEK_SCRIPT[(st.week || 1) - 1]) {
+      return WEEK_SCRIPT[st.week - 1].title;
+    }
+    if (wim === WEEKS_PER_MONTH) return "房东只要现金";
+    if (life && life.cash < 0) return life.name;
+    if (ratio < 1) return "口袋已经不够这张单";
+    if (ratio < 1.25) return "只够这一张单";
+    if (m >= 2 && due > rentOf(m - 1)) return "房租又加了一截";
+    if (st.dca) return "定投这周还会再买";
+    if (ratio < 2) return "别把下个月的租买进去";
+    return "群嫌你慢，房东不嫌";
+  }
+
+  function weekFork(st) {
+    const m = currentMonth(st);
+    const due = rentOf(m);
+    const wim = weekInMonth(st.week);
+    const cash = st.cash || 0;
+    const gap = due - cash;
+    const life = st.pulse && st.pulse.life;
+    const script = currentScript(st);
+    const sparkW = weightOf(st, "spark");
+    const mx = (st.companies || []).find((c) => c.id === "mx");
+    if (life && life.cash < 0) {
+      return {
+        q: life.name + "拿走了 " + money(Math.abs(life.cash)),
+        go:
+          cash < due
+            ? "现金还剩 " + money(cash) + "。房租 " + money(due) + "。这一下把交租打穿了。不是行情。"
+            : "口袋还剩 " + money(cash) + "。房租仍要 " + money(due) + "。下一次不一定还够。",
+      };
+    }
+    if (wim === WEEKS_PER_MONTH) {
+      return {
+        q: cash >= due ? "这张单，现金还够" : "这张单，现金不够",
+        go: cash >= due ? "交完，剩下的带走。股票可以留下。" : "卖掉才有房租。浮盈交不出去。",
+      };
+    }
+    if (cash < due) {
+      return {
+        q: "还差 " + money(gap) + " 现金",
+        go: "距交租 " + (WEEKS_PER_MONTH - wim) + " 周。再不卖，房东只看见空口袋。",
+      };
+    }
+    if (script.diluteSpark && sparkW >= 0.25) {
+      return {
+        q: "星火要多印股票",
+        go: "你的那份会被摊薄。减一点换现金，还是继续坐着？",
+      };
+    }
+    if (sparkW >= 0.55) {
+      return {
+        q: "生活费大半在一家店里",
+        go: "涨的时候像勇气。交租那天只看口袋。",
+      };
+    }
+    if (st.dca) {
+      const shop = (st.companies || []).find((c) => c.id === st.dca.id);
+      return {
+        q: "定投这周还会再买 " + ((shop && shop.name) || "那家"),
+        go: "现金会自己出门。房东不管均价。",
+      };
+    }
+    if (st.debt) {
+      return {
+        q: "欠着 " + money(st.debt) + " 去赶行情",
+        go: "周息先走。保证金不够时，仓位不是你的。",
+      };
+    }
+    if (mx && mx.shares === 0 && cash > due * 1.4 && m >= 2 && lookedCo(st, "mx")) {
+      return {
+        q: "进账的店你还没买",
+        go: "群不提麦香。交租那天，进账可能还在。",
+      };
+    }
+    if (cash < due * 1.5) {
+      return {
+        q: "现金只够 " + (cash / due).toFixed(1) + " 个月房租",
+        go: "再买，就是跟下个月的房东抢。",
+      };
+    }
+    if (m === 1) {
+      return WEEK_ASK[(st.week || 1) - 1] || { q: "现金还够付这张单吗？", go: "房东只要现金。" };
+    }
+    return {
+      q: "这周买，还是把现金留到交租？",
+      go: "买卖还剩 " + (st.actionsLeft || 0) + " 次。不买也是一次判断。",
+    };
   }
 
   function ensurePulse(st) {
@@ -2021,6 +2117,14 @@
         name: pulse.life.name,
         cash: pulse.life.cash,
       });
+      if (pulse.life.cash < 0) {
+        st.scars = (st.scars || []).concat({
+          week: st.week,
+          month: currentMonth(st),
+          name: pulse.life.name,
+          cash: pulse.life.cash,
+        });
+      }
     }
     if (pulse.market) {
       learn(st, pulse.market.term || "policy", true);
@@ -3546,27 +3650,27 @@
     return {
       2: {
         title: "街上又开了两家",
-        body: "云巢和药房开门了。买入可以选一成、三成、七成。也可以换仓：一笔操作卖掉一家、买进另一家。还可以设定投。看店仍然不花次数。",
+        body: "多两处能把房租买进去。换仓花一次操作。定投每周自动再买——现金会自己出门，房东不管均价。",
         term: "dca",
       },
       3: {
         title: "高价酒 · 对冲",
-        body: "琼浆一手就要很多现金。反向保护在星火跌的时候涨。用来少输，不是用来翻倍。板块多了，顶上会出现分类。",
+        body: "琼浆一手就能掏空交租的钱。对冲在星火跌的时候涨：用来少死一次，不是用来翻倍。",
         term: "hedge",
       },
       4: {
-        title: "解锁 · 基金",
-        body: "稳行指数是一篮子股票的平均表现。集中度被摊平，回撤通常小于单只龙头。不上热搜。热搜交不出房租。",
+        title: "一篮子来了",
+        body: "稳行指数把集中度摊平。不上热搜。热搜交不出房租。创业板要净值够了才开门。",
         term: "fund",
       },
       5: {
-        title: "解锁 · 融资",
-        body: "可以借入资金扩大仓位。每周计息。保证金不足会被强制平仓。亏损后本金和利息仍要还。",
+        title: "可以借了",
+        body: "借来的仓位能把房租买进去。每周计息。保证金不够会被强行卖掉。勇气先走，房东还在。",
         term: "leverage",
       },
       6: {
-        title: "解锁 · 数字金币",
-        body: "一张大家约定值钱的游戏卡。卡本身换不来盒饭。一周的涨跌可以吃掉一个月房租。真股市里有人用几十亿才学会：先活着。",
+        title: "没有店的那种",
+        body: "数字金币换不来盒饭。一周的涨跌可以吃掉一个月房租。先活着。",
         term: "btc",
       },
     }[month];
@@ -3583,6 +3687,11 @@
     runDca(state);
     checkBoards(state);
     ensurePulse(state);
+    const m = currentMonth(state);
+    if (m >= 2) {
+      const hike = rentOf(m) - rentOf(m - 1);
+      if (hike > 0) toast(state, "房租涨到 " + money(rentOf(m)) + "。比上个月多 " + money(hike) + "。房东每个月都加一点。");
+    }
     const pack = unlockPack(currentMonth(state));
     if (pack && !state.flags["unlock-" + currentMonth(state)]) {
       state.flags["unlock-" + currentMonth(state)] = true;
@@ -3616,7 +3725,7 @@
         "第 " + state.monthsPaid + " 个月房租交上了。股票还在，现金少了一截。这叫还活着。"
       );
     }
-    toast(state, "房租 " + money(due) + " 已交。剩下的带到下个月。");
+    toast(state, "房租 " + money(due) + " 已交。口袋剩 " + money(state.cash) + "。下个月要 " + money(rentOf(currentMonth(state) + 1)) + "。");
     touchCash(state);
     enterNextMonth(state);
   }
@@ -3711,6 +3820,12 @@
 
   function nextDare() {
     const meta = loadMeta();
+    if (meta.lastHook) {
+      return {
+        long: meta.lastHook,
+        short: meta.lastGap > 0 ? "别再差 " + money(meta.lastGap) : meta.lastShort || "再住一轮",
+      };
+    }
     const best = meta.bestMonths || 0;
     const ach = meta.achievements || {};
     if (best < 1) {
@@ -3735,6 +3850,67 @@
       return { long: "「先看店的人」还空着。看店比出手勤，再住一季。", short: "去印「先看店的人」" };
     }
     return { long: "城南还记得你印过的那些。再住一轮。", short: "再住一轮" };
+  }
+
+  function autopsy(state) {
+    const due = rentOf(currentMonth(state));
+    const nav = navOf(state);
+    const gap = due - (state.cash || 0);
+    if (!state.flags.evicted) {
+      const months = state.monthsPaid || 0;
+      const next = months < 1 ? 1 : months < 3 ? 3 : months < 6 ? 6 : months < 9 ? 9 : 12;
+      if (months >= 12) {
+        return { gap: 0, hook: "活过一年。学费交在游戏里。还可以再住一轮。", short: "再住一轮" };
+      }
+      return {
+        gap: 0,
+        hook: "活过 " + months + " 个月。下一次，试着活过「" + surviveTitle(next) + "」。",
+        short: "去印「" + surviveTitle(next) + "」",
+      };
+    }
+    const lastLife = [...(state.log || [])].reverse().find((t) => t.t === "life" && t.cash < 0);
+    const lastBuy = [...(state.log || [])].reverse().find((t) => t.t === "buy");
+    if (lastLife && gap > 0 && Math.abs(lastLife.cash) + 1 >= gap) {
+      return {
+        gap,
+        hook:
+          lastLife.name +
+          "那周拿走了 " +
+          money(Math.abs(lastLife.cash)) +
+          "。少那么一笔，差的 " +
+          money(gap) +
+          " 就在。这个月还住着。",
+        short: "别再差 " + money(gap),
+      };
+    }
+    if (lastBuy && gap > 0 && lastBuy.amount >= gap) {
+      return {
+        gap,
+        hook:
+          "第 " +
+          lastBuy.week +
+          " 周买 " +
+          lastBuy.name +
+          " 花了 " +
+          money(lastBuy.amount) +
+          "。少买那一笔，差的 " +
+          money(gap) +
+          " 就在口袋里。",
+        short: "别再差 " + money(gap),
+      };
+    }
+    if (gap > 0 && nav >= due) {
+      return {
+        gap,
+        hook: "差 " + money(gap) + " 现金。净值还在 " + money(nav) + "。股票带不走房租。",
+        short: "别再差 " + money(gap),
+      };
+    }
+    return {
+      gap: Math.max(0, gap),
+      hook: "第 " + currentMonth(state) + " 个月交不起。再开一局，先活过这个月。",
+      short: "先活过这个月",
+    };
   }
 
   function endcardOf(state) {
@@ -4233,6 +4409,8 @@
       if (!titles[a.title]) titles[a.title] = 1;
     });
     if (state.flags.evicted && state.flags.deathKind) deaths[state.flags.deathKind] = true;
+    const cut = autopsy(state);
+    state.flags.hook = cut.hook;
     saveMeta({
       bestMonths: Math.max(meta.bestMonths || 0, state.monthsPaid || 0),
       plays: (meta.plays || 0) + 1,
@@ -4241,6 +4419,9 @@
       titles,
       deaths,
       lastTitle: title,
+      lastHook: cut.hook,
+      lastGap: cut.gap || 0,
+      lastShort: cut.short || "",
     });
     state.report = {
       nav,
@@ -4349,6 +4530,7 @@
       pulse: null,
       live: {},
       prints: [],
+      scars: [],
     };
     for (const c of state.companies) {
       c.narrative = (WEEK_SCRIPT[0].narrative[c.id] || 0) * ampOf(state.tape, c.id);
@@ -4521,9 +4703,7 @@
   function renderEndcard() {
     const e = endcardOf(state);
     const dare = nextDare();
-    const fresh = state.flags.newTitle
-      ? "新印上：「" + e.title + "」"
-      : dare.long;
+    const fresh = state.flags.hook || dare.long;
     return `
       <section class="screen evict-screen">
         ${renderPoster()}
@@ -5156,20 +5336,32 @@
   function renderMission() {
     const due = rentOf(currentMonth(state));
     const wim = weekInMonth(state.week);
+    const m = currentMonth(state);
+    const cash = state.cash || 0;
+    const gap = due - cash;
+    const ratio = due ? cash / due : 0;
+    const fork = weekFork(state);
+    const monthScars = (state.scars || []).filter((s) => s.month === m);
+    const scarLine = monthScars
+      .map((s) => s.name + " " + (s.cash > 0 ? "+" : "") + money(s.cash))
+      .join(" · ");
+    const last = !(state.monthsPaid || 0) ? loadMeta().lastHook : "";
+    const fog = m === 1 ? fogOf(state) : [];
+    const must = fog[0];
+    const mustWord = must && TERMS[must] ? TERMS[must].word.split(" / ")[0] : "";
     const shops = visibleCompanies(state);
     const lookedAny = shops.some((c) => lookedCo(state, c.id));
     const traded = (state.log || []).some(
       (t) => t.week === state.week && (t.t === "buy" || t.t === "sell" || t.swap)
     );
     const rentNow = wim === WEEKS_PER_MONTH;
-    const fog = fogOf(state);
-    const must = fog[0];
-    const mustWord = must && TERMS[must] ? TERMS[must].word.split(" / ")[0] : "";
-    return `
-      <div class="mission">
-        <div class="mission-kicker">这个月只要做成一件事</div>
-        <b>交房租 ${money(due)} · 房东只要现金</b>
-        <ol>
+    const stat =
+      cash < due
+        ? "现金 " + money(cash) + " · 还差 " + money(gap)
+        : "现金 " + money(cash) + " · 还够 " + ratio.toFixed(1) + " 个月房租";
+    const steps =
+      m === 1
+        ? `<ol>
           <li class="${lookedAny ? "done" : "now"}">点「看店」，弄清它为什么涨（免费）</li>
           <li class="${traded ? "done" : lookedAny ? "now" : ""}">买、卖，或这周先不买（还剩 ${state.actionsLeft} 次）</li>
           <li class="${rentNow ? "now" : ""}">${
@@ -5177,7 +5369,19 @@
               ? "这周去交租。股票留下也行，现金必须给。"
               : "活过这周 · 距交租 " + (WEEKS_PER_MONTH - wim) + " 周"
           }</li>
-        </ol>
+        </ol>`
+        : `<div class="mission-fork">
+          <b>${fork.q}</b>
+          <span>${fork.go}</span>
+        </div>`;
+    return `
+      <div class="mission">
+        <div class="mission-kicker">这个月只要做成一件事</div>
+        <b>交房租 ${money(due)} · 房东只要现金</b>
+        <p class="mission-stat${cash < due ? " down" : ""}">${stat}</p>
+        ${steps}
+        ${scarLine ? `<p class="scar-line">本月已出门：${scarLine}</p>` : ""}
+        ${last ? `<p class="scar-last">上一局：${last}</p>` : ""}
         ${
           must
             ? `<button type="button" class="must-word" data-act="must-word" data-id="${must}">本周必懂 · ${
@@ -5191,9 +5395,10 @@
   function renderClippings() {
     const hs = weekHeadlines(state);
     if (!hs.length) return "";
+    const show = hs.slice(0, 2);
     return `<div class="clippings">
       <div class="clippings-h">今日报纸 · 点开读，不花次数</div>
-      ${hs
+      ${show
         .map((h, i) => {
           const rot = i % 2 ? "-1.4deg" : "1.1deg";
           return `<button type="button" class="clip clip-${h.kind}" data-act="headline" data-i="${i}" style="--rot:${rot}">
@@ -5220,7 +5425,6 @@
     const tabs = useBoards(state);
     const listed = tabs ? shops.filter((c) => c.sector === state.board) : shops;
     const stocks = listed.map((c) => renderStockCard(c, busy)).join("");
-    const hint = nextUnlockHint(state);
     const nShop = shops.length;
     const streetH = tabs
       ? board.name
@@ -5258,25 +5462,16 @@
             <div class="msg">${script.chat.text}</div>
           </div>
         </div>
-        ${script.news ? `<p class="news">${script.news}</p>` : ""}
+        ${m === 1 && script.news ? `<p class="news">${script.news}</p>` : ""}
         ${
           script.policy
             ? `<div class="policy"><b>政策</b>${script.policy.name}<span>${script.policy.body}</span></div>`
             : ""
         }
-        ${
-          script.life
-            ? `<div class="policy life"><b>生活费</b>${script.life.name}<span>${script.life.body}${
-                script.life.cash
-                  ? " · 现金 " + (script.life.cash > 0 ? "+" : "") + money(script.life.cash)
-                  : ""
-              }</span></div>`
-            : ""
-        }
         ${renderClippings()}
         ${renderBoards()}
         <p class="street-h">${streetH}</p>
-        <p class="board-blurb">${streetB}${hint ? " " + hint : ""}</p>
+        <p class="board-blurb">${streetB}</p>
         <div class="stocks">${stocks || `<p class="missed">这家街上这月还没开门。</p>`}</div>
         <div class="footer">
           ${
@@ -5350,7 +5545,7 @@
     return `
       <section class="screen recap">
         <div class="kicker">这一局怎么${lost ? "死" : "活"}的 · ${diffOf(state).name}</div>
-        <p class="dare">${state.flags.newTitle ? "新印上：「" + e.title + "」" : dare.long}</p>
+        <p class="dare">${state.flags.hook || dare.long}</p>
         ${renderStampShelf()}
 
         <div class="recap-sec">复盘摘要</div>

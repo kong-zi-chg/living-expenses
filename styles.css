@@ -794,6 +794,48 @@ button {
   pointer-events: none;
 }
 
+.mission-stat {
+  margin: 6px 0 8px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.mission-stat.down {
+  color: var(--seal);
+  font-weight: 700;
+}
+
+.mission-fork {
+  margin-top: 8px;
+}
+
+.mission-fork b {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.mission-fork span {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.scar-line,
+.scar-last {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--seal);
+}
+
+.scar-last {
+  color: var(--ink-soft);
+}
+
 .mission-kicker {
   font-size: 11px;
   letter-spacing: 0.16em;
