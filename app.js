@@ -2189,6 +2189,8 @@
         toast(state, "政策 · " + script.policy.name);
       }
     }
+    state.live = {};
+    state.prints = [];
     markNav(state);
     if (script.term) learn(state, script.term, true);
     const held = state.companies.filter((c) => c.shares > 0);
@@ -2279,7 +2281,179 @@
   }
 
   function lotCost(c) {
-    return c.price * (c.lot || 1);
+    return quoteOf(c) * (c.lot || 1);
+  }
+
+  function quoteOf(c) {
+    if (!c) return 0;
+    const live = state && state.live && state.live[c.id];
+    return live && live.px ? live.px : c.price;
+  }
+
+  function liveClock() {
+    const d = new Date();
+    const p = function (n) {
+      return (n < 10 ? "0" : "") + n;
+    };
+    return "盘中 " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+
+  function tapeBits() {
+    return (state.companies || [])
+      .filter(function (c) {
+        return !c.unlockMonth || currentMonth(state) >= c.unlockMonth;
+      })
+      .map(function (c) {
+        const px = quoteOf(c);
+        const base = c.prevClose || c.price;
+        const chg = (px - base) / (base || 1);
+        const cls = chg >= 0 ? "up" : "down";
+        return (
+          '<span data-tape="' +
+          c.id +
+          '">' +
+          c.name +
+          ' <b class="pnl ' +
+          cls +
+          '">' +
+          px.toFixed(2) +
+          " " +
+          pct(chg) +
+          "</b></span>"
+        );
+      })
+      .join("");
+  }
+
+  function renderTape() {
+    const bits = tapeBits();
+    return (
+      '<div class="tape-wrap"><div class="tape" id="tape">' + bits + bits + "</div></div>"
+    );
+  }
+
+  function liveNavOf(st) {
+    const s = st || state;
+    return (
+      s.cash -
+      (s.debt || 0) +
+      s.companies.reduce(function (sum, c) {
+        return sum + c.shares * quoteOf(c);
+      }, 0)
+    );
+  }
+
+  function printsInner() {
+    const rows = (state.prints || []).slice(0, 8);
+    if (!rows.length) return '<div class="print mute">等待成交回报…</div>';
+    return rows
+      .map(function (p) {
+        return (
+          '<div class="print ' +
+          p.dir +
+          '"><em>' +
+          (p.dir === "up" ? "买" : "卖") +
+          "</em>" +
+          p.name +
+          " · " +
+          p.sh +
+          " 股 @ " +
+          p.px.toFixed(2) +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  let liveTimer = 0;
+  function bindLive() {
+    if (!liveTimer) liveTimer = setInterval(tickLive, 900);
+    paintLive();
+  }
+
+  function tickLive() {
+    if (!state || state.ended || state.scene !== "play") return;
+    if (!state.live) state.live = {};
+    if (!state.prints) state.prints = [];
+    for (let i = 0; i < state.companies.length; i++) {
+      const c = state.companies[i];
+      if (isHalted(state, c)) continue;
+      const base = c.price;
+      const cur = state.live[c.id] && state.live[c.id].px ? state.live[c.id].px : base;
+      const next = clampPx(
+        Math.max(base * 0.974, Math.min(base * 1.026, cur * (1 + (Math.random() - 0.49) * (c.vol || 0.05) * 0.11)))
+      );
+      const dir = next >= cur ? "up" : "down";
+      state.live[c.id] = { px: next, dir: dir };
+      if (Math.random() < 0.42) {
+        state.prints.unshift({
+          id: c.id,
+          name: c.name,
+          px: next,
+          sh: (c.lot || 1) * (1 + Math.floor(Math.random() * 9)),
+          dir: dir,
+        });
+        if (state.prints.length > 28) state.prints.length = 28;
+      }
+    }
+    paintLive();
+  }
+
+  function paintLive() {
+    const nodes = document.querySelectorAll("[data-live-px]");
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      const id = el.getAttribute("data-live-px");
+      const L = state.live && state.live[id];
+      if (!L) continue;
+      el.textContent = L.px.toFixed(2);
+      el.classList.remove("flash-up", "flash-down");
+      void el.offsetWidth;
+      el.classList.add(L.dir === "up" ? "flash-up" : "flash-down");
+    }
+    const chgs = document.querySelectorAll("[data-live-chg]");
+    for (let j = 0; j < chgs.length; j++) {
+      const el = chgs[j];
+      const id = el.getAttribute("data-live-chg");
+      const c = state.companies.find(function (x) {
+        return x.id === id;
+      });
+      if (!c) continue;
+      const px = quoteOf(c);
+      const base = c.prevClose || c.price;
+      const chg = (px - base) / (base || 1);
+      el.textContent = pct(chg) + (el.getAttribute("data-live-suffix") || "");
+      el.classList.toggle("up", chg >= 0);
+      el.classList.toggle("down", chg < 0);
+    }
+    const tapeItems = document.querySelectorAll("[data-tape]");
+    for (let t = 0; t < tapeItems.length; t++) {
+      const el = tapeItems[t];
+      const id = el.getAttribute("data-tape");
+      const c = state.companies.find(function (x) {
+        return x.id === id;
+      });
+      if (!c) continue;
+      const px = quoteOf(c);
+      const base = c.prevClose || c.price;
+      const chg = (px - base) / (base || 1);
+      const cls = chg >= 0 ? "up" : "down";
+      el.innerHTML =
+        c.name +
+        ' <b class="pnl ' +
+        cls +
+        '">' +
+        px.toFixed(2) +
+        " " +
+        pct(chg) +
+        "</b>";
+    }
+    const prints = document.getElementById("prints");
+    if (prints) prints.innerHTML = printsInner();
+    const clocks = document.querySelectorAll("[data-live-clock]");
+    for (let k = 0; k < clocks.length; k++) clocks[k].textContent = liveClock();
+    const navEl = document.querySelector("[data-live-nav]");
+    if (navEl) navEl.textContent = money(liveNavOf(state));
   }
 
   function checkBoards(state) {
@@ -2879,7 +3053,8 @@
     }
     const lot = c.lot || 1;
     const budget = state.cash * fraction;
-    const one = c.price * lot;
+    const px = quoteOf(c);
+    const one = px * lot;
     if (budget < one) {
       learn(state, "lot");
       toast(state, "一手 " + lot + " 股，要 " + money(one) + "。这点钱不够买进。");
@@ -2887,7 +3062,7 @@
     }
     if (fraction >= 0.99) learn(state, "allin");
     const shares = Math.floor(budget / one) * lot;
-    const spent = +(shares * c.price).toFixed(2);
+    const spent = +(shares * px).toFixed(2);
     const prevCost = c.avgCost * c.shares;
     c.shares += shares;
     c.avgCost = c.shares ? (prevCost + spent) / c.shares : 0;
@@ -2912,7 +3087,7 @@
       return;
     }
     const shares = Math.max(1, Math.floor(c.shares * fraction));
-    let px = c.price;
+    let px = free ? c.price : quoteOf(c);
     if (cycleWeek(state.week) === 8) px = +(px * 0.92).toFixed(2);
     const proceeds = +(shares * px).toFixed(2);
     const cost = shares * c.avgCost;
@@ -2935,7 +3110,8 @@
       return;
     }
     const lot = c.lot || 1;
-    const one = c.price * lot;
+    const px = quoteOf(c);
+    const one = px * lot;
     const budget = Math.min(dca.amt, state.cash);
     if (budget < one) {
       toast(state, "定投跳过：现金不够一手 " + money(one) + "。");
@@ -2943,7 +3119,7 @@
       return;
     }
     const shares = Math.floor(budget / one) * lot;
-    const spent = +(shares * c.price).toFixed(2);
+    const spent = +(shares * px).toFixed(2);
     const prevCost = c.avgCost * c.shares;
     c.shares += shares;
     c.avgCost = c.shares ? (prevCost + spent) / c.shares : 0;
@@ -3503,6 +3679,8 @@ ${line}
       report: null,
       dca: null,
       pulse: null,
+      live: {},
+      prints: [],
     };
     for (const c of state.companies) {
       c.narrative = (WEEK_SCRIPT[0].narrative[c.id] || 0) * ampOf(state.tape, c.id);
@@ -3536,6 +3714,7 @@ ${line}
           <h1>生活费</h1>
           <p class="lede">群里每个人都觉得自己是<em>华尔街之狼</em>。你把攒了两年的八万块，打进了一个刚下载的 App。</p>
           <p class="lede">规则只有一条：<em>每个月交房租</em>。交不起就出局。股票可以带到下个月，房东只要现金。</p>
+          <p class="lede">盘口会跳。那是盘中报价，好玩。交房租仍只认周末结算后的现金。</p>
           <p class="fine">活得越久，工具越多。主线是在玩里学会，别拿真钱去交那几十亿学费。</p>
         </div>
         <button class="primary" data-act="boot">打开「疯牛」</button>
@@ -3549,7 +3728,7 @@ ${line}
           <div class="kicker">疯牛 · 转入</div>
           <h1 style="font-size:40px;letter-spacing:0.06em">80,000</h1>
           <p class="lede">储蓄卡余额足够。转进去之后，这笔钱成为投资资金，术语叫仓位：已买入资产、不能再当现金支付房租的部分。</p>
-          <p class="fine">每个月房租从 ${money(RENT)} 起，会慢慢涨。前期只能买两成、一半、全仓。点进任意股票，档案里都是同一套指标：市盈率、预期溢价、会计利润、经营现金流、散户持仓占比。</p>
+          <p class="fine">每个月房租从 ${money(RENT)} 起，会慢慢涨。前期只能买两成、一半、全仓。点进任意股票，左上金色「回板块」能回去。档案里是同一套指标：市盈率、预期溢价、会计利润、经营现金流、散户持仓占比。报价会跳，周K线周末才结算。</p>
         </div>
         <button class="primary" data-act="start">确认转入生活费</button>
       </section>`;
@@ -3604,7 +3783,7 @@ ${line}
             <p>每周自动买固定金额，不占本周操作次数。涨也买、跌也买。现金不够一手就跳过。交租仍只认现金。</p>
             ${
               pick
-                ? `<p>标的：${pick.name} · 现价 ${pick.price.toFixed(2)} · 一手约 ${money(lotCost(pick))}</p>
+                ? `<p>标的：${pick.name} · 现价 <b data-live-px="${pick.id}">${quoteOf(pick).toFixed(2)}</b> · 一手约 ${money(lotCost(pick))}</p>
                    <div class="sizes wide">${amts
                      .map((n) => `<button data-act="dca-set" data-id="${pick.id}" data-amt="${n}">每周 ${money(n)}</button>`)
                      .join("")}</div>`
@@ -3653,7 +3832,7 @@ ${line}
       <div class="sheet" data-act="close-sheet">
         <div class="sheet-card" data-stop="1">
           <h2>${s.kind === "buy" ? "买 " : "卖 "}${c.name}</h2>
-          <p>现价 ${c.price.toFixed(2)} · 现金 ${money(state.cash)}${
+          <p>现价 <b data-live-px="${c.id}">${quoteOf(c).toFixed(2)}</b> · 现金 ${money(state.cash)}${
             s.kind === "buy"
               ? " · 一手 " + (c.lot || 1) + " 股约 " + money(lotCost(c))
               : ""
@@ -3850,7 +4029,8 @@ ${line}
 
   function renderStockCard(c, busy) {
     const prev = c.prevClose || c.history[0];
-    const chg = (c.price - prev) / prev;
+    const px = quoteOf(c);
+    const chg = (px - prev) / prev;
     const up = chg >= 0;
     const w = weightOf(state, c.id);
     const u = unrealizedOf(c);
@@ -3880,8 +4060,8 @@ ${line}
               <span class="tag">${nudgeOf(state, c.id) ? "这周值得看一眼" : sec ? sec.name + " · " + c.tag : c.tag}</span>
             </div>
             <div class="px">
-              <div class="now">${c.price.toFixed(2)}</div>
-              <div class="chg pnl ${up ? "up" : "down"}">${pct(chg)}</div>
+              <div class="now" data-live-px="${c.id}">${px.toFixed(2)}</div>
+              <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}">${pct(chg)}</div>
             </div>
           </div>
           ${sparkline(c.history, up)}
@@ -3943,7 +4123,8 @@ ${line}
     const c = state.companies.find((x) => x.id === state.viewStock);
     if (!c) return renderPlay();
     const prev = c.prevClose || c.history[0];
-    const chg = (c.price - prev) / prev;
+    const px = quoteOf(c);
+    const chg = (px - prev) / prev;
     const up = chg >= 0;
     const hi = Math.max.apply(null, c.history);
     const lo = Math.min.apply(null, c.history);
@@ -3957,15 +4138,26 @@ ${line}
     const u = unrealizedOf(c);
     return `
       <section class="screen stock-page">
-        <div class="stock-top">
-          <button class="back" data-act="close-stock">返回板块</button>
-          <div class="actions-left" style="margin:0">本周还能操作 ${state.actionsLeft} 次${lookedThisWeek(state) ? " · 本周已分析" : " · 分析每周限一次"}</div>
+        <div class="stock-sticky">
+          <div class="stock-top">
+            <button type="button" class="back" data-act="close-stock">← 回板块</button>
+            <div class="stock-crumb">${sec ? sec.name : "板块"} · ${c.ticker}${halt ? " · 停牌" : locked ? " · 未开通" : ""}</div>
+          </div>
+          ${
+            state.flags.sawNav
+              ? ""
+              : `<button type="button" class="coach" data-act="ack-nav">第一次进来：左上金色「回板块」能回去 · 点这里关掉</button>`
+          }
         </div>
-        <div class="kicker">${sec ? sec.name : ""} · ${c.ticker}${halt ? " · 停牌" : locked ? " · 未开通" : ""}</div>
+        ${renderTape()}
+        <div class="live-row">
+          <span class="live-pill"><i></i><span data-live-clock>${liveClock()}</span></span>
+          <span class="actions-left" style="margin:0">本周还能操作 ${state.actionsLeft} 次${lookedThisWeek(state) ? " · 本周已分析" : " · 分析每周限一次"}</span>
+        </div>
         <h2 class="stock-title">${c.name}</h2>
         <div class="px-lg">
-          <div class="now">${c.price.toFixed(2)}</div>
-          <div class="chg pnl ${up ? "up" : "down"}">${pct(chg)} · 本周</div>
+          <div class="now" data-live-px="${c.id}">${px.toFixed(2)}</div>
+          <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}" data-live-suffix=" · 盘中">${pct(chg)} · 盘中</div>
         </div>
         ${candleChart(c)}
         <div class="quote-row">
@@ -3974,6 +4166,8 @@ ${line}
           <span>一手 ${c.lot || 1} 股</span>
           <span>${money(lotCost(c))}</span>
         </div>
+        <div class="prints-h">实时成交</div>
+        <div class="prints" id="prints">${printsInner()}</div>
         ${renderAnalysis(c)}
         <div class="dossier">${c.backstory}</div>
         <div class="feed-h">本周关于它 · 每局都不一样</div>
@@ -4056,11 +4250,16 @@ ${line}
 
     return `
       <section class="screen" style="padding-top:18px">
+        ${renderTape()}
+        <div class="live-row">
+          <span class="live-pill"><i></i><span data-live-clock>${liveClock()}</span></span>
+          <span class="live-note">报价在跳 · 周K线周末才结算</span>
+        </div>
         <div class="topbar">
           <div class="week-label">第 ${m} 个月 · 第 ${wim} / ${WEEKS_PER_MONTH} 周<b>${script.title}</b></div>
           <div class="nav-stack">
             <div class="cash">现金 ${money(state.cash)}</div>
-            <div class="nav">${money(nav)}</div>
+            <div class="nav" data-live-nav>${money(liveNavOf(state))}</div>
             <div class="pnl ${ret >= 0 ? "up" : "down"}">净值 ${pct(ret)}</div>
             <div class="cash">${state.debt ? "欠款 " + money(state.debt) + " · " : ""}房租 ${money(due)} ${state.cash >= due ? "现金还够" : "现金不够"}</div>
           </div>
@@ -4259,6 +4458,7 @@ ${line}
     else if (state.viewStock) root.innerHTML = renderStock();
     else root.innerHTML = renderPlay();
     renderWall();
+    bindLive();
   }
 
   document.getElementById("desk").addEventListener("click", async (e) => {
@@ -4313,7 +4513,11 @@ ${line}
         body: "墙上写着：" + r + "。定义不在这里。点进个股档案、点「分析」、买入或卖出，碰上了才会记下。",
       };
     }
-    if (act === "close-stock") state.viewStock = null;
+    if (act === "close-stock") {
+      state.flags.sawNav = true;
+      state.viewStock = null;
+    }
+    if (act === "ack-nav") state.flags.sawNav = true;
     if (act === "open-stock") {
       state.viewStock = id;
       const c = state.companies.find((x) => x.id === id);
