@@ -2022,7 +2022,7 @@ button {
 
 .intro-line {
   font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1.45;
   color: var(--ink);
   opacity: 0.45;
@@ -2160,4 +2160,144 @@ button {
 
 .goal-card h2 {
   color: var(--seal);
+}
+
+.crowd-strip {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0 0 12px;
+  padding: 10px 12px 11px;
+  background:
+    linear-gradient(rgba(247, 236, 210, 0.92), rgba(247, 236, 210, 0.92)),
+    url("./assets/newsprint.jpg") center / cover;
+  box-shadow: 2px 3px 0 rgba(42, 33, 24, 0.14);
+  transform: rotate(-0.35deg);
+  color: var(--ink);
+}
+
+.crowd-strip i {
+  display: block;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--seal);
+}
+
+.crowd-strip b {
+  display: block;
+  font-size: 16px;
+  margin: 3px 0 2px;
+}
+
+.crowd-strip em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.crowd-clip {
+  margin: 12px 0 4px;
+}
+
+.crowd-clip em {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 0;
+  border: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.poster {
+  background: #fffaf0;
+  border: 2px solid var(--seal);
+  padding: 16px 16px 18px;
+  margin: 10px 0 14px;
+  color: #2a2118;
+  box-shadow: 4px 6px 0 rgba(42, 33, 24, 0.16);
+}
+
+.poster.dead {
+  border-color: #b54432;
+}
+
+.poster-paper {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--seal);
+}
+
+.poster-kicker {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--seal);
+  margin: 8px 0 4px;
+}
+
+.poster h2 {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+
+.poster-line {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #5c4e3e;
+}
+
+.poster-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.poster-crowd {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--seal);
+}
+
+.poster-foot {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.life-cash {
+  font-variant-numeric: tabular-nums;
+  font-size: 36px;
+  font-weight: 700;
+  margin: 8px 0 10px;
+}
+
+.life-cash.down {
+  color: var(--down);
+}
+
+.life-cash.up {
+  color: var(--up);
+}
+
+.life-card {
+  border-left: 4px solid var(--seal);
+}
+
+.evict-screen .ghost {
+  color: #e8d7c4;
+}
+
+.evict-screen .poster {
+  margin-top: 8px;
+}
+
+.intro .primary {
+  position: relative;
+  z-index: 3;
 }
