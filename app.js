@@ -238,13 +238,13 @@
   };
 
   const WEEK_ASK = [
-    { q: "转进去的八万，还叫存款吗？", go: "点开任意一只股票，打开个股档案。先看「会计利润」和「经营现金流」两列。不一致时，以经营现金流为准。" },
-    { q: "现价里超出当前盈利的部分叫什么？", go: "点进星火档案，看「预期溢价」。那一截不是已经实现的盈利，是市场对未来增长的定价。" },
-    { q: "利润增长了，经营现金流跟上了吗？", go: "花一回合点「分析」。会计利润按权责发生制计算，经营现金流是实际到账的现金。" },
-    { q: "创业板的开通门槛，保护的是什么？", go: "点开未开通的创业板。这叫投资者适当性：账户净值不够就不能交易，不问你会不会看K线。" },
+    { q: "转进去的八万，还叫存款吗？", go: "点「看店」。买成店的那部分不能再当房租，除非卖掉。房东只要现金。" },
+    { q: "现价里超出当前盈利的部分叫什么？", go: "点进星火「看店」，看「预期溢价」。那一截不是已经进账的钱，是市场对未来的定价。" },
+    { q: "利润增长了，经营现金流跟上了吗？", go: "点「看店」。会计利润按权责发生制计算，经营现金流是实际到账的现金。" },
+    { q: "创业板这周在涨，为什么街上没有它？", go: "净值不到门槛，门不会出现。这叫投资者适当性：不问你会不会看，只问亏得起吗。" },
     { q: "全仓会把风险集中到什么程度？", go: "全仓指可用资金几乎全部变成股票。买之前看现金还够不够支付本月房租。" },
-    { q: "资金从芯片流向新能源，盈利已经改善了吗？", go: "点进追光档案。这叫板块轮动：热点切换，不等于该公司经营现金流已经增加。" },
-    { q: "公司增发之后，你的持股比例变大还是下降？", go: "去星火点「分析」。增发增加总股本，原股东持股被稀释。" },
+    { q: "资金从芯片流向新能源，盈利已经改善了吗？", go: "以后追光开门时再看。板块轮动是热点换队，不等于那家店多进了钱。" },
+    { q: "公司增发之后，你的持股比例变大还是下降？", go: "去星火点「看店」。增发增加总股本，原股东持股被稀释。" },
     { q: "散户占比很高时，你还能按现价卖出吗？", go: "看档案里的「散户持仓占比」。占比越高，集中卖出时流动性越差，越难按现价成交。" },
     { q: "经营还在赚钱，股价为什么先跌？", go: "打开日常消费，看麦香档案：经营现金流与估值可以暂时背离。" },
     { q: "现金还够支付本月房租吗？", go: "房租只收现金。股票再值钱，交租日卖出也可能面临流动性折价。" },
@@ -330,6 +330,7 @@
       cashGen: 2.0,
       startPrice: 21,
       lot: 1,
+      debutMonth: 2,
       backstory: "机房在郊区。宣传在写字楼。一半是真的机柜，一半是还没赚到的预期。",
     },
     {
@@ -352,6 +353,7 @@
       cashGen: 2.35,
       startPrice: 15,
       lot: 1,
+      debutMonth: 2,
       backstory: "老板以前是药剂师。货是真的，梦比较少。",
     },
     {
@@ -385,6 +387,7 @@
       cashGen: 22,
       startPrice: 418,
       lot: 100,
+      debutMonth: 3,
       backstory: "酒窖在山里。股价在云上。零钱买不进这瓶面子。",
     },
     {
@@ -670,7 +673,7 @@
     7: [
       { src: "政策日历", title: "本周无新的税收调整", kind: "real", body: "这一刀来自公司，不是财政部。下一刀未必。" },
       { src: "股东权益", title: "有人把增发写成利好，有人写成被偷", kind: "real", term: "dilution", body: "两种写法。数学只有一种：份额变多，你的份变薄。" },
-      { src: "印刷厂", title: "新股票比公告更早印出来", kind: "real", term: "dilution", body: "你若去点「分析」，不会对增发预案感到意外。" },
+      { src: "印刷厂", title: "新股票比公告更早印出来", kind: "real", term: "dilution", body: "你若去点「看店」，不会对增发预案感到意外。" },
     ],
     8: [
       { src: "财政部", title: "证券交易印花税上调", kind: "policy", term: "policy", body: "这不是一家公司的事。税率改了，所有人重新计算要不要卖。流动性会突然变差。" },
@@ -882,7 +885,7 @@
     ],
     6: [
       "人从芯片涌去新能源。不是那家突然会赚钱，是夜市换队了。后去的人排的是别人排过的队。",
-      "去星火点「分析」，会比群更早看见增发：总股本增加，原股东被稀释。",
+      "去星火点「看店」，会比群更早看见增发：总股本增加，原股东被稀释。",
       "有人抵押车子加仓。那不是内部消息。那是别人的车。",
     ],
     7: [
@@ -1289,7 +1292,7 @@
     ],
     7: [
       { src: "披萨店", title: "有人把多切几块写成利好", kind: "real", term: "dilution", body: "两种写法。数学只有一种：你那口更薄了。" },
-      { src: "印刷厂", title: "新纸比公告更早", kind: "real", term: "dilution", body: "你若去点「分析」，不会对增发预案感到意外。" },
+      { src: "印刷厂", title: "新纸比公告更早", kind: "real", term: "dilution", body: "你若去点「看店」，不会对增发预案感到意外。" },
     ],
     8: [
       { src: "收费站", title: "过路费连夜涨，没有过渡期", kind: "policy", term: "policy", body: "不是一家店的事。整条街重新算要不要走。窗口排满了。" },
@@ -1398,7 +1401,7 @@
       week: 1,
       title: "你进来了",
       chat: { who: "老王", text: "星火这波稳了。还在买菜的以后别说话。" },
-      news: "八万块已到账。消费和科技人人能点。创业板要账户达标。高价酒，一手就可能要四万。",
+      news: "八万块已到账。这个月街上只开两家店：星火，和没人在群里提的麦香。看店不花次数。先看懂，再把手里的房租押上去。",
       term: "position",
       narrative: {
         spark: 0.32,
@@ -1475,7 +1478,7 @@
           title: "星火季度利润同比大增",
           kind: "real",
           term: "cashflow",
-          body: "会计利润是按权责发生制算出来的。点「分析」进入档案，对照经营现金流有没有同步增加。",
+          body: "会计利润是按权责发生制算出来的。点「看店」，对照经营现金流有没有同步增加。",
         },
         {
           src: "群友截图",
@@ -1564,7 +1567,7 @@
       week: 6,
       title: "顶上的风",
       chat: { who: "小周", text: "我同学内部消息，还要涨。信我。" },
-      news: "如果你去星火点「分析」，会比群更早看见增发预案。资金已经开始从芯片流向新能源。这叫板块轮动。",
+      news: "如果你去星火点「看店」，会比群更早看见增发预案。资金已经开始从芯片流向新能源。这叫板块轮动。",
       narrative: {
         spark: 1.68,
         mx: 0.04,
@@ -2273,8 +2276,77 @@
     return !!(c && haltedOf(state) === c.id);
   }
 
+  function companyVisible(state, c) {
+    if (!c) return false;
+    const m = currentMonth(state);
+    if (c.sector === "gem") return gemUnlocked(state);
+    if (c.unlockMonth && m < c.unlockMonth) return false;
+    if ((c.debutMonth || 1) > m) return false;
+    return true;
+  }
+
+  function visibleCompanies(state) {
+    return (state.companies || []).filter((c) => companyVisible(state, c));
+  }
+
+  function visibleSectors(state) {
+    return SECTORS.filter((sec) => visibleCompanies(state).some((c) => c.sector === sec.id));
+  }
+
+  function useBoards(state) {
+    return visibleCompanies(state).length >= 5;
+  }
+
+  function ensureBoard(state) {
+    const secs = visibleSectors(state);
+    if (!secs.length) {
+      state.board = "tech";
+      return;
+    }
+    if (!secs.some((s) => s.id === state.board)) state.board = secs[0].id;
+  }
+
+  function nextUnlockHint(state) {
+    const m = currentMonth(state);
+    if (m === 1) return "下个月会再开两家店。这个月先看懂星火和麦香。";
+    if (m === 2) return "下个月：高价酒和对冲。现在可以一笔换仓。";
+    if (m === 3) return "下个月：一篮子基金。创业板要净值够了才开门。";
+    if (m === 4) return "下个月可以借钱。借来的也要还。";
+    if (m === 5) return "下个月：数字金币。没有店的那种。";
+    return "";
+  }
+
+  function lookedCo(st, id) {
+    const c = (st.companies || []).find((x) => x.id === id);
+    return !!(c && c.researchedWeeks && c.researchedWeeks.indexOf(st.week) >= 0);
+  }
+
+  function clueOf(c) {
+    const story = storyShare(c);
+    const crowd = crowdOf(c, state.week);
+    const acct = c.cashGen * (1 + (c.narrative || 0) * 0.85);
+    const gap = c.cashGen > 0 ? (acct - c.cashGen) / c.cashGen : 1;
+    const cashLine = !c.cashGen
+      ? "没有店，没有进账"
+      : gap > 0.35
+        ? "报表好看，进账没跟上"
+        : gap > 0.12
+          ? "进账慢半拍"
+          : "每天下午都有现金进来";
+    const storyLine =
+      story > 0.45 ? "现价大半是故事" : story > 0.22 ? "价钱里掺了预期" : "价钱靠近已经赚到的钱";
+    const crowdLine = crowd > 0.6 ? "买的人很多，想跑会挤" : crowd > 0.4 ? "散户在加" : "盘口还不算挤";
+    let why;
+    if (!c.cashGen) why = "它涨是因为有人出价更高。没有进账托底。";
+    else if (story > 0.4 && gap > 0.2) why = "这周涨，多半是故事在涨，不是店里多进了钱。";
+    else if (story < 0.18) why = "它不怎么涨。进账还在。群会当它没新闻。";
+    else why = "故事和进账都在动。对照两列，别只看涨跌。";
+    return { cashLine, storyLine, crowdLine, why, line: cashLine + " · " + storyLine };
+  }
+
   function canTrade(state, c) {
     if (!c) return false;
+    if (!companyVisible(state, c)) return false;
     if (isHalted(state, c)) return false;
     if (c.unlockMonth && currentMonth(state) < c.unlockMonth) return false;
     return boardOpen(state, c.sector);
@@ -2301,7 +2373,7 @@
   function tapeBits() {
     return (state.companies || [])
       .filter(function (c) {
-        return !c.unlockMonth || currentMonth(state) >= c.unlockMonth;
+        return companyVisible(state, c);
       })
       .map(function (c) {
         const px = quoteOf(c);
@@ -2326,7 +2398,9 @@
   }
 
   function renderTape() {
+    if (currentMonth(state) < 2) return "";
     const bits = tapeBits();
+    if (!bits) return "";
     return (
       '<div class="tape-wrap"><div class="tape" id="tape">' + bits + bits + "</div></div>"
     );
@@ -2378,6 +2452,7 @@
     for (let i = 0; i < state.companies.length; i++) {
       const c = state.companies[i];
       if (isHalted(state, c)) continue;
+      if (!companyVisible(state, c)) continue;
       const base = c.price;
       const cur = state.live[c.id] && state.live[c.id].px ? state.live[c.id].px : base;
       const next = clampPx(
@@ -2600,7 +2675,7 @@
         return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(" ");
-    const color = up ? "#3dd68c" : "#e85d5d";
+    const color = up ? "#7eb89a" : "#c46b5a";
     return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
   }
 
@@ -2634,7 +2709,7 @@
     const body = cs
       .map((k, i) => {
         const up = k.c >= k.o;
-        const color = up ? "#3dd68c" : "#e85d5d";
+        const color = up ? "#7eb89a" : "#c46b5a";
         const x = i * slot + slot * 0.5;
         const y1 = yOf(k.h);
         const y2 = yOf(k.l);
@@ -2651,8 +2726,8 @@
         const idx = cs.findIndex((k) => m.at >= k.from && m.at < k.to);
         if (idx < 0) return "";
         const x = idx * slot + slot * 0.5;
-        return `<text x="${x.toFixed(1)}" y="11" text-anchor="middle" fill="#d4a017" font-size="9">${m.label}</text>
-          <circle cx="${x.toFixed(1)}" cy="16" r="2.2" fill="#d4a017"/>`;
+        return `<text x="${x.toFixed(1)}" y="11" text-anchor="middle" fill="#e0a45a" font-size="9">${m.label}</text>
+          <circle cx="${x.toFixed(1)}" cy="16" r="2.2" fill="#e0a45a"/>`;
       })
       .join("");
     return `<svg class="kline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${body}${marks}</svg>`;
@@ -2688,7 +2763,7 @@
     const items = [{ when: "更早以前", body: c.backstory }];
     for (const w of c.researchedWeeks) {
       items.push({
-        when: "第" + w + "周 · 分析",
+        when: "第" + w + "周 · 看店",
         body: researchPack(c, w).body,
       });
     }
@@ -2740,7 +2815,6 @@
   function afterResearch(state, c, term) {
     if (!state.flags.everLooked) {
       state.flags.everLooked = true;
-      toast(state, "已打开档案。指标与点进任意股票相同：市盈率、预期溢价、经营现金流、散户持仓占比。");
     }
     learn(state, term);
     const week = state.week;
@@ -3163,24 +3237,88 @@
   }
 
   function research(state, id) {
-    if (state.scene !== "play" || state.actionsLeft <= 0) return;
-    if (lookedThisWeek(state)) {
-      toast(state, "本周已经分析过一次。剩下的次数用来买卖。");
-      return;
-    }
+    if (state.scene !== "play") return;
     const c = state.companies.find((x) => x.id === id);
     if (!c) return;
-    if (c.researchedWeeks.indexOf(state.week) >= 0) return;
     state.viewStock = id;
     state.sheet = null;
+    if (c.researchedWeeks.indexOf(state.week) >= 0) return;
     const pack = researchPack(c, state.week);
     c.researchedWeeks.push(state.week);
-    state.actionsLeft -= 1;
     state.log.push({ t: "look", week: state.week, id: c.id, name: c.name });
     learn(state, "pe", true);
     learn(state, "valuation", true);
     learn(state, "cashflow", true);
     afterResearch(state, c, pack.term);
+    toast(state, clueOf(c).why);
+  }
+
+  function swap(state, fromId, toId, fraction) {
+    if (currentMonth(state) < 2) {
+      toast(state, "下个月才能换仓。这个月先看明白两家店。");
+      return;
+    }
+    if (state.scene !== "play" || state.actionsLeft <= 0) return;
+    const from = state.companies.find((x) => x.id === fromId);
+    const to = state.companies.find((x) => x.id === toId);
+    if (!from || !to || from.shares <= 0 || !canTrade(state, to) || from.id === to.id) {
+      toast(state, "换不了。要卖的手里得有，要买的这周得能买。");
+      return;
+    }
+    if (isHalted(state, from) || isHalted(state, to)) {
+      toast(state, "停牌的不能换。");
+      return;
+    }
+    const shares = Math.max(1, Math.floor(from.shares * fraction));
+    const pxFrom = quoteOf(from);
+    const proceeds = +(shares * pxFrom).toFixed(2);
+    const pnl = proceeds - shares * from.avgCost;
+    from.shares -= shares;
+    if (!from.shares) from.avgCost = 0;
+    state.cash = +(state.cash + proceeds).toFixed(2);
+    state.realized += pnl;
+    state.log.push({
+      t: "sell",
+      week: state.week,
+      id: from.id,
+      name: from.name,
+      shares,
+      price: pxFrom,
+      amount: proceeds,
+      pnl,
+      swap: true,
+    });
+    const lot = to.lot || 1;
+    const pxTo = quoteOf(to);
+    const one = pxTo * lot;
+    const got = Math.floor(proceeds / one) * lot;
+    if (got < lot) {
+      state.actionsLeft -= 1;
+      state.sheet = null;
+      toast(state, "卖掉了 " + from.name + "，但换过去不够一手。现金还在口袋里。");
+      learn(state, "lot", true);
+      return;
+    }
+    const spent = +(got * pxTo).toFixed(2);
+    const prevCost = to.avgCost * to.shares;
+    to.shares += got;
+    to.avgCost = to.shares ? (prevCost + spent) / to.shares : 0;
+    state.cash = +(state.cash - spent).toFixed(2);
+    state.actionsLeft -= 1;
+    state.sheet = null;
+    state.log.push({
+      t: "buy",
+      week: state.week,
+      id: to.id,
+      name: to.name,
+      shares: got,
+      price: pxTo,
+      amount: spent,
+      swap: true,
+    });
+    learn(state, "avgCost");
+    learn(state, "diversification", true);
+    toast(state, "换仓：卖掉 " + from.name + "，买进 " + to.name + "。花了 1 次操作。");
   }
 
   function nextWeek(state) {
@@ -3206,13 +3344,13 @@
   function unlockPack(month) {
     return {
       2: {
-        title: "解锁 · 仓位档 / 定投",
-        body: "买入可以选一成、三成、七成。也可以设定投：每周固定金额自动买一只，不占操作次数。定投摊薄成本，但现金照样要留来交租。",
+        title: "街上又开了两家",
+        body: "云巢和药房开门了。买入可以选一成、三成、七成。也可以换仓：一笔操作卖掉一家、买进另一家。还可以设定投。看店仍然不花次数。",
         term: "dca",
       },
       3: {
-        title: "解锁 · 对冲",
-        body: "工具板增加反向保护仓。标的下跌时它上涨。用来降低净风险，会牺牲一部分上涨收益。",
+        title: "高价酒 · 对冲",
+        body: "琼浆一手就要很多现金。反向保护在星火跌的时候涨。用来少输，不是用来翻倍。板块多了，顶上会出现分类。",
         term: "hedge",
       },
       4: {
@@ -3601,7 +3739,7 @@
       state.journal.push("你赚到了。那是运气和胆量叠在一起。胆量下次不一定还在。");
     }
     if (ret < 0 && !state.flags.sawPrint) {
-      state.journal.push("你没去看那台打印机。不是因为笨，是因为看要花一回合。");
+      state.journal.push("你没去看那台打印机。不是因为笨，是因为群太吵。");
     }
     if (state.flags.evicted) {
       state.journal.push("这个月交不起房租。股票再漂亮，房东只要现金。涨跌只是过程。");
@@ -3710,14 +3848,13 @@ ${line}
     return `
       <section class="screen splash">
         <div>
-          <div class="kicker">那一年</div>
+          <div class="kicker">城南 · 一间出租屋</div>
           <h1>生活费</h1>
-          <p class="lede">群里每个人都觉得自己是<em>华尔街之狼</em>。你把攒了两年的八万块，打进了一个刚下载的 App。</p>
-          <p class="lede">规则只有一条：<em>每个月交房租</em>。交不起就出局。股票可以带到下个月，房东只要现金。</p>
-          <p class="lede">盘口会跳。那是盘中报价，好玩。交房租仍只认周末结算后的现金。</p>
-          <p class="fine">活得越久，工具越多。主线是在玩里学会，别拿真钱去交那几十亿学费。</p>
+          <p class="lede">八万块。房东每月来一次。群里在喊星火。</p>
+          <p class="lede">你先只能看<em>两家店</em>。看店免费，买卖才花次数。活过这个月，街上才会再开门。</p>
+          <p class="fine">交不起房租就出局。股票可以带走，房东只要现金。不是投资建议。</p>
         </div>
-        <button class="primary" data-act="boot">打开「疯牛」</button>
+        <button class="primary" data-act="boot">打开账本</button>
       </section>`;
   }
 
@@ -3725,10 +3862,10 @@ ${line}
     return `
       <section class="screen splash">
         <div>
-          <div class="kicker">疯牛 · 转入</div>
+          <div class="kicker">把生活费放进来</div>
           <h1 style="font-size:40px;letter-spacing:0.06em">80,000</h1>
-          <p class="lede">储蓄卡余额足够。转进去之后，这笔钱成为投资资金，术语叫仓位：已买入资产、不能再当现金支付房租的部分。</p>
-          <p class="fine">每个月房租从 ${money(RENT)} 起，会慢慢涨。前期只能买两成、一半、全仓。点进任意股票，左上金色「回板块」能回去。档案里是同一套指标：市盈率、预期溢价、会计利润、经营现金流、散户持仓占比。报价会跳，周K线周末才结算。</p>
+          <p class="lede">转进去之后，买成店的那部分就不能再当房租。这个月只开两家：一家群里在喊，一家每天下午有现金。</p>
+          <p class="fine">房租从 ${money(RENT)} 起，会慢慢涨。点「看店」会记下它为什么涨。买卖每周两次。先看，再押。</p>
         </div>
         <button class="primary" data-act="start">确认转入生活费</button>
       </section>`;
@@ -3745,6 +3882,42 @@ ${line}
             <p>${s.body}</p>
             ${termFoot(s.term)}
             <button class="primary" style="margin-top:16px" data-act="close-sheet">我看见了</button>
+          </div>
+        </div>`;
+    }
+    if (s.kind === "swap") {
+      const held = visibleCompanies(state).filter((c) => c.shares > 0);
+      const dest = visibleCompanies(state).filter((c) => canTrade(state, c));
+      if (!held.length) {
+        return `
+        <div class="sheet" data-act="close-sheet">
+          <div class="sheet-card" data-stop="1">
+            <h2>换仓</h2>
+            <p>先买一家，才能换成另一家。换仓花 1 次操作。</p>
+            <button class="primary" style="margin-top:16px" data-act="close-sheet">知道了</button>
+          </div>
+        </div>`;
+      }
+      const rows = held
+        .map((from) => {
+          const others = dest.filter((d) => d.id !== from.id);
+          if (!others.length) return "";
+          return `<p class="swap-from">卖掉 ${from.name}（${from.shares} 股）</p>
+            <div class="sizes wide">${others
+              .map(
+                (to) =>
+                  `<button data-act="swap" data-from="${from.id}" data-to="${to.id}" data-f="0.5">一半换 ${to.name}</button><button data-act="swap" data-from="${from.id}" data-to="${to.id}" data-f="1">全部换 ${to.name}</button>`
+              )
+              .join("")}</div>`;
+        })
+        .join("");
+      return `
+        <div class="sheet" data-act="close-sheet">
+          <div class="sheet-card" data-stop="1">
+            <h2>换仓</h2>
+            <p>一笔操作：卖掉手里的，换成另一家。看店仍然免费。</p>
+            ${rows || `<p>这周能换去的店还没开门。</p>`}
+            <button class="ghost" data-act="close-sheet">先不换</button>
           </div>
         </div>`;
     }
@@ -3921,7 +4094,7 @@ ${line}
     const fogs = fog
       .map(
         (k) =>
-          `<button class="fog" data-act="wall-fog" data-id="${k}"><i>这周可能碰上</i>${RIDDLE[k] || "点进档案、完成分析才会记下"}</button>`
+          `<button class="fog" data-act="wall-fog" data-id="${k}"><i>这周可能碰上</i>${RIDDLE[k] || "点进档案、完成看店才会记下"}</button>`
       )
       .join("");
 
@@ -3945,20 +4118,22 @@ ${line}
         <div class="cmp-row"><span>会计利润</span><b>${acct(spark)}</b><b>${acct(mx)}</b></div>
         <div class="cmp-row"><span>经营现金流</span><b>${spark.cashGen.toFixed(2)}</b><b>${mx.cashGen.toFixed(2)}</b></div>
         <div class="cmp-row"><span>散户持仓占比</span><b>${pct(crowdOf(spark, state.week))}</b><b>${pct(crowdOf(mx, state.week))}</b></div>
-        <p>点公司名打开完整档案：K线、市盈率、预期溢价、会计利润、经营现金流、散户持仓占比。点「分析」进入的是同一页。</p>
+        <p>点公司名打开店。点「看店」才记下它这周为什么涨。</p>
       </div>`;
     }
 
+    const mNow = playing ? currentMonth(state) : 1;
     const unlocks = [
       [1, "两成 / 一半 / 全仓"],
-      [UNLOCK_MONTH.sizing, "仓位档 / 定投"],
+      [UNLOCK_MONTH.sizing, "换仓 / 定投"],
       [UNLOCK_MONTH.hedge, "对冲"],
       [UNLOCK_MONTH.fund, "基金"],
       [UNLOCK_MONTH.leverage, "融资"],
       [UNLOCK_MONTH.coin, "数字金币"],
     ]
+      .filter(([m]) => m <= mNow + 1)
       .map(([m, name]) => {
-        const on = currentMonth(state) >= m;
+        const on = mNow >= m;
         return `<span class="unlock ${on ? "on" : ""}">${on ? name : "第" + m + "月 · " + name}</span>`;
       })
       .join("");
@@ -3994,7 +4169,7 @@ ${line}
       <div class="wall-inner">
         <button class="wall-close" data-act="toggle-wall">收起词墙</button>
         <div class="wall-h">
-          <div class="kicker">疯牛 · 词墙</div>
+          <div class="kicker">出租屋 · 词墙</div>
           <div class="wall-count">已学会 ${got.length}</div>
         </div>
         <div class="sticky ${cashOk ? "" : "hot"}">
@@ -4009,8 +4184,11 @@ ${line}
             ? `<button class="ask" data-act="ask-week"><i>本周只问一句</i><b>${ask.q}</b></button>`
             : `<p class="wall-idle">把八万转进来。墙上才会开始记词。</p>`
         }
-        <div class="meter-h">三个问题 · 档案里能直接看到</div>
-        <div class="chips">${threes}</div>
+        ${
+          playing && currentMonth(state) >= 2
+            ? `<div class="meter-h">三个问题 · 看店之后能对照</div><div class="chips">${threes}</div>`
+            : ""
+        }
         ${sizing}
         ${compare}
         ${fogs ? `<div class="meter-h">这周可能碰上 · 去看、去买才会记下</div><div class="fogs">${fogs}</div>` : ""}
@@ -4020,11 +4198,49 @@ ${line}
   }
 
   function renderBoards() {
-    return `<div class="boards">${SECTORS.map((sec) => {
-      const locked = !boardOpen(state, sec.id);
-      const on = state.board === sec.id ? "on" : "";
-      return `<button class="board ${on} ${locked ? "locked" : ""}" data-act="pick-board" data-id="${sec.id}">${sec.name}${locked ? " 锁" : ""}</button>`;
-    }).join("")}</div>`;
+    const secs = visibleSectors(state);
+    if (!useBoards(state) || secs.length < 2) return "";
+    return `<div class="boards">${secs
+      .map((sec) => {
+        const on = state.board === sec.id ? "on" : "";
+        return `<button class="board ${on}" data-act="pick-board" data-id="${sec.id}">${sec.name}</button>`;
+      })
+      .join("")}</div>`;
+  }
+
+  function shopButtons(c, busy) {
+    const halt = isHalted(state, c);
+    const locked = !canTrade(state, c);
+    const looked = lookedCo(state, c.id);
+    const off = busy ? "disabled" : "";
+    const sellBtn = c.shares
+      ? `<button class="sell" data-act="open-sell" data-id="${c.id}" ${off}>卖</button>`
+      : "";
+    return `<div class="row-btns ${c.shares ? "" : "two"}">
+          <button class="${nudgeOf(state, c.id) && !looked ? "nudge" : ""}" data-act="research" data-id="${c.id}">${
+            looked ? "再看一眼" : "看店"
+          }</button>
+          <button class="buy" data-act="open-buy" data-id="${c.id}" ${off}>${halt ? "停牌" : locked ? "未开通" : "买"}</button>
+          ${sellBtn}
+        </div>`;
+  }
+
+  function renderClue(c) {
+    if (!lookedCo(state, c.id)) {
+      return `<button type="button" class="look-cta" data-act="research" data-id="${c.id}">看店 · 这周它为什么涨</button>
+        <p class="hint">群里的话不算。进账、故事、人群，看过才写在账上。</p>`;
+    }
+    const clue = clueOf(c);
+    return `<div class="clue-box">
+        <div class="clue-kicker">看店记下 · 本周</div>
+        <p class="clue-why">${clue.why}</p>
+        <ul class="clue-list">
+          <li>${clue.cashLine}</li>
+          <li>${clue.storyLine}</li>
+          <li>${clue.crowdLine}</li>
+        </ul>
+      </div>
+      ${renderAnalysis(c)}`;
   }
 
   function renderStockCard(c, busy) {
@@ -4036,7 +4252,8 @@ ${line}
     const u = unrealizedOf(c);
     const halt = isHalted(state, c);
     const locked = !canTrade(state, c);
-    const sec = sectorOf(c.sector);
+    const looked = lookedCo(state, c.id);
+    const clue = looked ? clueOf(c) : null;
     const held = c.shares
       ? `仓位 ${pct(w)} · 成本 ${c.avgCost.toFixed(2)} · 浮${u >= 0 ? "盈" : "亏"} ${pct(
           (c.price - c.avgCost) / (c.avgCost || 1)
@@ -4047,17 +4264,17 @@ ${line}
           ? "未开通 · 可以看，不能买"
           : c.lot > 1
             ? "一手 " + c.lot + " 股 · 约 " + money(lotCost(c))
-            : "未持仓 · 点进去看档案";
-    const hot =
-      (c.id === "spark" && state.week <= 6) ||
-      (c.id === "light" && state.week >= 4 && state.week <= 6);
+            : looked
+              ? clue.line
+              : "还没看店。群说的不算。";
+    const hot = false;
     return `
-      <article class="stock ${hot ? "hot" : ""} ${locked ? "dim" : ""}">
+      <article class="stock ${hot ? "hot" : ""} ${locked ? "dim" : ""} ${looked ? "seen" : ""}">
         <button type="button" class="stock-hit" data-act="open-stock" data-id="${c.id}">
           <div class="stock-head">
             <div>
-              <div class="name">${c.name}<span class="ticker">${c.ticker}</span></div>
-              <span class="tag">${nudgeOf(state, c.id) ? "这周值得看一眼" : sec ? sec.name + " · " + c.tag : c.tag}</span>
+              <div class="name">${c.name}<span class="ticker">${looked ? "已看" : c.ticker}</span></div>
+              <span class="tag">${nudgeOf(state, c.id) && !looked ? "这周值得看一眼" : c.tag}</span>
             </div>
             <div class="px">
               <div class="now" data-live-px="${c.id}">${px.toFixed(2)}</div>
@@ -4067,13 +4284,7 @@ ${line}
           ${sparkline(c.history, up)}
           <div class="pos">${held}</div>
         </button>
-        <div class="row-btns ${busy}">
-          <button class="${nudgeOf(state, c.id) && !lookedThisWeek(state) ? "nudge" : ""}" data-act="research" data-id="${c.id}" ${
-            lookedThisWeek(state) || busy ? "disabled" : ""
-          }>${lookedThisWeek(state) ? "本周已分析" : "分析"}</button>
-          <button class="buy" data-act="open-buy" data-id="${c.id}">${halt ? "停牌" : locked ? "未开通" : "买"}</button>
-          <button class="sell" data-act="open-sell" data-id="${c.id}">卖</button>
-        </div>
+        ${shopButtons(c, busy)}
       </article>`;
   }
 
@@ -4136,28 +4347,30 @@ ${line}
       .map((m) => `<div class="memo"><b>${m.when}</b><span>${m.body}</span></div>`)
       .join("");
     const u = unrealizedOf(c);
+    const looked = lookedCo(state, c.id);
+    const backLabel = "← 回街上";
     return `
       <section class="screen stock-page">
         <div class="stock-sticky">
           <div class="stock-top">
-            <button type="button" class="back" data-act="close-stock">← 回板块</button>
-            <div class="stock-crumb">${sec ? sec.name : "板块"} · ${c.ticker}${halt ? " · 停牌" : locked ? " · 未开通" : ""}</div>
+            <button type="button" class="back" data-act="close-stock">${backLabel}</button>
+            <div class="stock-crumb">${c.tag}${halt ? " · 停牌" : locked ? " · 未开通" : ""}</div>
           </div>
           ${
             state.flags.sawNav
               ? ""
-              : `<button type="button" class="coach" data-act="ack-nav">第一次进来：左上金色「回板块」能回去 · 点这里关掉</button>`
+              : `<button type="button" class="coach" data-act="ack-nav">左上角能回去 · 点这里关掉</button>`
           }
         </div>
         ${renderTape()}
         <div class="live-row">
-          <span class="live-pill"><i></i><span data-live-clock>${liveClock()}</span></span>
-          <span class="actions-left" style="margin:0">本周还能操作 ${state.actionsLeft} 次${lookedThisWeek(state) ? " · 本周已分析" : " · 分析每周限一次"}</span>
+          <span class="live-pill">${currentMonth(state) < 2 ? "看店免费" : '<i></i><span data-live-clock>' + liveClock() + "</span>"}</span>
+          <span class="actions-left" style="margin:0">买卖还剩 ${state.actionsLeft} 次</span>
         </div>
         <h2 class="stock-title">${c.name}</h2>
         <div class="px-lg">
           <div class="now" data-live-px="${c.id}">${px.toFixed(2)}</div>
-          <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}" data-live-suffix=" · 盘中">${pct(chg)} · 盘中</div>
+          <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}" data-live-suffix="${currentMonth(state) < 2 ? " · 本周" : " · 盘中"}">${pct(chg)}${currentMonth(state) < 2 ? " · 本周" : " · 盘中"}</div>
         </div>
         ${candleChart(c)}
         <div class="quote-row">
@@ -4166,9 +4379,8 @@ ${line}
           <span>一手 ${c.lot || 1} 股</span>
           <span>${money(lotCost(c))}</span>
         </div>
-        <div class="prints-h">实时成交</div>
-        <div class="prints" id="prints">${printsInner()}</div>
-        ${renderAnalysis(c)}
+        ${currentMonth(state) >= 2 ? `<div class="prints-h">实时成交</div><div class="prints" id="prints">${printsInner()}</div>` : ""}
+        ${renderClue(c)}
         <div class="dossier">${c.backstory}</div>
         <div class="feed-h">本周关于它 · 每局都不一样</div>
         ${
@@ -4198,18 +4410,12 @@ ${line}
           c.shares
             ? `持仓 ${c.shares} 股 · 成本 ${c.avgCost.toFixed(2)} · 浮${u >= 0 ? "盈" : "亏"} ${money(u)}`
             : halt
-              ? "本周停牌。你可以看K线，但不能把生活费打进去。"
+              ? "本周停牌。你可以看店，但不能把生活费打进去。"
               : locked
-                ? "未开通。你可以看K线，但不能把生活费打进去。"
+                ? "未开通。你可以看店，但不能把生活费打进去。"
                 : "未持仓"
         }</div>
-        <div class="row-btns ${busy}" style="margin-top:8px">
-          <button class="${nudgeOf(state, c.id) && !lookedThisWeek(state) ? "nudge" : ""}" data-act="research" data-id="${c.id}" ${
-            lookedThisWeek(state) || busy ? "disabled" : ""
-          }>${lookedThisWeek(state) ? "本周已分析" : "分析"}</button>
-          <button class="buy" data-act="open-buy" data-id="${c.id}">${halt ? "停牌" : locked ? "未开通" : "买"}</button>
-          <button class="sell" data-act="open-sell" data-id="${c.id}">卖</button>
-        </div>
+        ${shopButtons(c, busy)}
         <div class="footer">
           ${
             unlocked(state, "dca") && !halt && !locked
@@ -4229,31 +4435,36 @@ ${line}
   }
 
   function renderPlay() {
+    ensureBoard(state);
     const nav = navOf(state);
     const ret = nav / START_CASH - 1;
     const script = flavoredScript(state);
     const busy = state.actionsLeft <= 0 ? "disabled" : "";
     const board = sectorOf(state.board) || SECTORS[1];
-    const locked = !boardOpen(state, board.id);
     const due = rentOf(currentMonth(state));
     const m = currentMonth(state);
     const wim = weekInMonth(state.week);
-    const listed = state.companies.filter(
-      (c) => c.sector === board.id && (!c.unlockMonth || currentMonth(state) >= c.unlockMonth)
-    );
+    const shops = visibleCompanies(state);
+    const tabs = useBoards(state);
+    const listed = tabs ? shops.filter((c) => c.sector === state.board) : shops;
     const stocks = listed.map((c) => renderStockCard(c, busy)).join("");
-    const gateNote = locked
-      ? board.gate && board.gate.type === "month"
-        ? " · 活到第 " + board.gate.min + " 个月才开。现在第 " + m + " 个月。"
-        : " · 净值满 " + money(GEM_NAV) + " 开通。现在 " + money(nav) + "。"
-      : "";
+    const hint = nextUnlockHint(state);
+    const streetH =
+      m === 1 ? "先看这两家店" : tabs ? board.name : "这个月街上的店";
+    const streetB =
+      m === 1
+        ? "一家群里在喊，一家每天下午有现金。看店不花次数。"
+        : tabs
+          ? board.blurb
+          : "店变多了。可以换仓：一笔操作卖掉一家、买进另一家。";
+    const canSwap = m >= 2 && shops.some((c) => c.shares > 0);
 
     return `
       <section class="screen" style="padding-top:18px">
         ${renderTape()}
         <div class="live-row">
-          <span class="live-pill"><i></i><span data-live-clock>${liveClock()}</span></span>
-          <span class="live-note">报价在跳 · 周K线周末才结算</span>
+          <span class="live-pill">${m < 2 ? "看店免费" : '<i></i><span data-live-clock>' + liveClock() + "</span>"}</span>
+          <span class="live-note">买卖还剩 ${state.actionsLeft} 次 · 距交租 ${WEEKS_PER_MONTH - wim} 周</span>
         </div>
         <div class="topbar">
           <div class="week-label">第 ${m} 个月 · 第 ${wim} / ${WEEKS_PER_MONTH} 周<b>${script.title}</b></div>
@@ -4264,9 +4475,8 @@ ${line}
             <div class="cash">${state.debt ? "欠款 " + money(state.debt) + " · " : ""}房租 ${money(due)} ${state.cash >= due ? "现金还够" : "现金不够"}</div>
           </div>
         </div>
-        <div class="actions-left">本周还能操作 ${state.actionsLeft} 次 · 分析每周限一次 · 距交租 ${WEEKS_PER_MONTH - wim} 周</div>
         <div class="chat">
-          <div class="who">疯牛群 · ${script.chat.who}</div>
+          <div class="who">巷口群 · ${script.chat.who}</div>
           <div class="msg">${script.chat.text}</div>
         </div>
         ${script.news ? `<p class="news">${script.news}</p>` : ""}
@@ -4298,9 +4508,15 @@ ${line}
           })()
         }
         ${renderBoards()}
-        <p class="board-blurb">${board.blurb}${gateNote}</p>
-        <div class="stocks">${stocks || `<p class="missed">这个板块这月还没开门。</p>`}</div>
+        <p class="street-h">${streetH}</p>
+        <p class="board-blurb">${streetB}${hint ? " " + hint : ""}</p>
+        <div class="stocks">${stocks || `<p class="missed">这家街上这月还没开门。</p>`}</div>
         <div class="footer">
+          ${
+            canSwap
+              ? `<button class="ghost" data-act="open-swap">换仓</button>`
+              : ""
+          }
           ${
             unlocked(state, "dca")
               ? `<button class="ghost" data-act="open-dca">${
@@ -4324,7 +4540,7 @@ ${line}
               : ""
           }
           <button class="wait" data-act="wait">${
-            wim === WEEKS_PER_MONTH ? "去交这个月的房租" : "进入下一周"
+            wim === WEEKS_PER_MONTH ? "去交这个月的房租" : m === 1 ? "这周只看，进下一周" : "进入下一周"
           }</button>
         </div>
         ${renderSheet()}
@@ -4510,7 +4726,7 @@ ${line}
       state.sheet = {
         kind: "look",
         title: "这周可能碰上的词",
-        body: "墙上写着：" + r + "。定义不在这里。点进个股档案、点「分析」、买入或卖出，碰上了才会记下。",
+        body: "墙上写着：" + r + "。定义不在这里。点「看店」、买入或卖出，碰上了才会记下。",
       };
     }
     if (act === "close-stock") {
@@ -4521,7 +4737,6 @@ ${line}
     if (act === "open-stock") {
       state.viewStock = id;
       const c = state.companies.find((x) => x.id === id);
-      learn(state, "pe");
       learn(state, "sector", true);
       if (c && c.lot > 1) learn(state, "lot", true);
       if (c && c.sector === "gem") learn(state, "eligibility", true);
@@ -4529,6 +4744,8 @@ ${line}
       if (c && c.id === "fund") learn(state, "fund", true);
       if (c && c.id === "coin") learn(state, "btc", true);
     }
+    if (act === "open-swap") state.sheet = { kind: "swap" };
+    if (act === "swap") swap(state, hit.dataset.from, hit.dataset.to, Number(hit.dataset.f));
     if (act === "pick-board") {
       state.board = id;
       state.viewStock = null;
@@ -4651,7 +4868,14 @@ ${line}
     }
     if (act === "wait" && state.scene === "play") {
       if (state.actionsLeft === ACTIONS) {
-        toast(state, "你把这周留给了看。群不会理解。");
+        const shops = visibleCompanies(state);
+        const unseen = shops.filter((c) => !lookedCo(state, c.id));
+        toast(
+          state,
+          unseen.length === shops.length
+            ? "店都没看。群说的，就算你的判断。"
+            : "你把这周留给了看。群不会理解。"
+        );
       }
       nextWeek(state);
     }

@@ -1,17 +1,18 @@
 :root {
-  --bg: #0c0b0a;
-  --paper: #141210;
-  --paper-2: #1c1916;
-  --line: #2c2722;
-  --gold: #d4a017;
-  --gold-dim: #8a6a12;
-  --up: #3dd68c;
-  --down: #e85d5d;
-  --text: #f3ece3;
-  --muted: #9a8f82;
-  --danger: #c94a3a;
-  --chat: #241c16;
+  --bg: #1c1712;
+  --paper: #2a231c;
+  --paper-2: #352c24;
+  --line: #4a3d30;
+  --gold: #e0a45a;
+  --gold-dim: #a67a3e;
+  --up: #7eb89a;
+  --down: #c46b5a;
+  --text: #f0e6d4;
+  --muted: #a89880;
+  --danger: #c4543c;
+  --chat: #241c18;
   --shadow: rgba(0, 0, 0, 0.45);
+  --seal: #c4543c;
 }
 
 * {
@@ -29,7 +30,7 @@ body {
   min-height: -webkit-fill-available;
   max-width: 100%;
   overflow-x: hidden;
-  background: #070605;
+  background: #14110e;
   color: var(--text);
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei",
     system-ui, sans-serif;
@@ -37,7 +38,7 @@ body {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   color-scheme: dark;
-  -webkit-tap-highlight-color: rgba(212, 160, 23, 0.22);
+  -webkit-tap-highlight-color: rgba(224, 164, 90, 0.22);
 }
 
 body {
@@ -100,22 +101,21 @@ button {
 .splash {
   justify-content: space-between;
   background:
-    radial-gradient(1200px 420px at 50% -10%, #2a2110 0%, transparent 70%),
+    radial-gradient(900px 380px at 50% -8%, #3a2a18 0%, transparent 68%),
     var(--bg);
 }
 
 .kicker {
   font-size: 12px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   color: var(--gold);
-  text-transform: uppercase;
 }
 
 .splash h1 {
-  font-family: Georgia, "Songti SC", serif;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
   font-size: 56px;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   margin: 18px 0 20px;
 }
 
@@ -140,11 +140,12 @@ button {
 .primary {
   width: 100%;
   height: 52px;
-  border-radius: 4px;
+  border-radius: 2px;
   background: var(--gold);
   color: #1a1408;
   font-weight: 650;
   font-size: 16px;
+  letter-spacing: 0.06em;
 }
 
 .primary:active {
@@ -175,9 +176,11 @@ button {
 .week-label b {
   display: block;
   color: var(--text);
-  font-size: 20px;
-  font-weight: 650;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
   margin-top: 2px;
+  letter-spacing: 0.06em;
 }
 
 .nav-stack {
@@ -211,8 +214,8 @@ button {
 
 .chat {
   background: var(--chat);
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border: 1px dashed var(--line);
+  border-radius: 2px;
   padding: 10px 12px;
   margin-bottom: 14px;
 }
@@ -237,13 +240,20 @@ button {
 
 .stock {
   background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 2px;
   padding: 12px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.22);
 }
 
-.stock.hot {
-  border-color: #5a4318;
+.stock.hot,
+.stock.seen {
+  border-color: var(--gold-dim);
+  border-style: solid;
+}
+
+.stock.seen {
+  background: #32281f;
 }
 
 .stock-head {
@@ -305,9 +315,13 @@ button {
   gap: 8px;
 }
 
+.row-btns.two {
+  grid-template-columns: 1fr 1fr;
+}
+
 .row-btns button {
   height: 36px;
-  border-radius: 4px;
+  border-radius: 2px;
   background: var(--paper-2);
   border: 1px solid var(--line);
   font-size: 13px;
@@ -812,7 +826,7 @@ button {
 .board.on {
   border-color: var(--gold-dim);
   color: var(--gold);
-  background: #221c12;
+  background: #32281f;
 }
 
 .board.locked {
@@ -824,6 +838,63 @@ button {
   line-height: 1.5;
   color: #cbb89a;
   margin: -2px 0 10px;
+}
+
+.street-h {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  margin: 8px 0 4px;
+}
+
+.look-cta {
+  display: block;
+  width: 100%;
+  margin: 10px 0 6px;
+  padding: 14px 12px;
+  border: 1px dashed var(--gold);
+  background: rgba(224, 164, 90, 0.12);
+  color: var(--gold);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.clue-box {
+  margin: 12px 0 14px;
+  padding: 12px;
+  border: 1px dashed var(--gold-dim);
+  background: #32281f;
+}
+
+.clue-kicker {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.clue-why {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.clue-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #d7c4a4;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.swap-from {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  color: var(--gold);
 }
 
 .stock-hit {
@@ -842,6 +913,10 @@ button {
   opacity: 0.88;
 }
 
+.stock-page .row-btns {
+  margin-top: 8px;
+}
+
 .stock-page {
   padding-top: 8px;
 }
@@ -852,7 +927,7 @@ button {
   z-index: 8;
   margin: 0 -6px;
   padding: 8px 6px 12px;
-  background: linear-gradient(#0c0b0a 72%, rgba(12, 11, 10, 0));
+  background: linear-gradient(var(--bg) 72%, rgba(28, 23, 18, 0));
 }
 
 .stock-top {
@@ -1066,9 +1141,11 @@ button {
 }
 
 .stock-title {
-  font-size: 26px;
-  font-weight: 650;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "Songti SC", Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
   margin: 6px 0 4px;
+  letter-spacing: 0.08em;
 }
 
 .px-lg .now {
