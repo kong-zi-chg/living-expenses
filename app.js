@@ -2676,7 +2676,7 @@
         return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(" ");
-    const color = up ? "#7eb89a" : "#c46b5a";
+    const color = up ? "#217a56" : "#b54432";
     return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
   }
 
@@ -2710,7 +2710,7 @@
     const body = cs
       .map((k, i) => {
         const up = k.c >= k.o;
-        const color = up ? "#7eb89a" : "#c46b5a";
+        const color = up ? "#217a56" : "#b54432";
         const x = i * slot + slot * 0.5;
         const y1 = yOf(k.h);
         const y2 = yOf(k.l);
@@ -2727,8 +2727,8 @@
         const idx = cs.findIndex((k) => m.at >= k.from && m.at < k.to);
         if (idx < 0) return "";
         const x = idx * slot + slot * 0.5;
-        return `<text x="${x.toFixed(1)}" y="11" text-anchor="middle" fill="#e0a45a" font-size="9">${m.label}</text>
-          <circle cx="${x.toFixed(1)}" cy="16" r="2.2" fill="#e0a45a"/>`;
+        return `<text x="${x.toFixed(1)}" y="11" text-anchor="middle" fill="#8a5a22" font-size="9">${m.label}</text>
+          <circle cx="${x.toFixed(1)}" cy="16" r="2.2" fill="#8a5a22"/>`;
       })
       .join("");
     return `<svg class="kline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${body}${marks}</svg>`;
@@ -4524,8 +4524,11 @@ ${line}
           </div>
         </div>
         <div class="chat">
-          <div class="who">巷口群 · ${script.chat.who}</div>
-          <div class="msg">${script.chat.text}</div>
+          <div class="chat-bar"><i></i><i></i><i></i><b>巷口群</b></div>
+          <div class="bubble">
+            <div class="who">${script.chat.who}</div>
+            <div class="msg">${script.chat.text}</div>
+          </div>
         </div>
         ${script.news ? `<p class="news">${script.news}</p>` : ""}
         ${
