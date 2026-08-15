@@ -708,7 +708,7 @@
   function kindLabel(kind) {
     if (kind === "noise") return "传闻";
     if (kind === "policy") return "政策";
-    return "基本面";
+    return "能核对";
   }
 
   function saltRng(st, salt, week) {
@@ -830,7 +830,7 @@
       { who: "快递员", text: "我不管K线。我管这层楼还有没有人开门。" },
       { who: "会计朋友", text: "利润是算的。现金是数的。别让群替你数。" },
       { who: "夜班护士", text: "急诊不看盘。发烧的人也不看。" },
-      { who: "群匿名", text: "内部消息：内部消息这三个字本身不是消息。" },
+      { who: "群匿名", text: "内部消息：内部消息这四个字本身不是消息。" },
       { who: "麦香店员", text: "你们屏幕上打的仗，跟我下午五点收的钱没关系。" },
       { who: "妈妈", text: "钱够吃饭吗。够就行。不够就别跟同学比。" },
       { who: "理发店", text: "老板问我最近是不是发财了。我说发型没变，是屏幕亮。" },
@@ -1399,7 +1399,7 @@
   const WEEK_SCRIPT = [
     {
       week: 1,
-      title: "你进来了",
+      title: "先看店，再交租",
       chat: { who: "老王", text: "星火这波稳了。还在买菜的以后别说话。" },
       news: "八万块已到账。这个月街上只开两家店：星火，和没人在群里提的麦香。看店不花次数。先看懂，再把手里的房租押上去。",
       term: "position",
@@ -1882,10 +1882,11 @@
       }
     }
     const life = pulse && pulse.life ? pulse.life : null;
+    const early = currentMonth(st) <= 1;
     return Object.assign({}, base, {
-      title: pickSalt(st, TITLE_BANK[cw], 41) || base.title,
+      title: early ? base.title : pickSalt(st, TITLE_BANK[cw], 41) || base.title,
       chat: pickSalt(st, chats, 17) || base.chat,
-      news: pickSalt(st, blurbs, 29) || base.news,
+      news: early ? base.news : pickSalt(st, blurbs, 29) || base.news,
       policy,
       life,
     });
@@ -3850,8 +3851,8 @@ ${line}
         <div>
           <div class="kicker">城南 · 一间出租屋</div>
           <h1>生活费</h1>
-          <p class="lede">八万块。房东每月来一次。群里在喊星火。</p>
-          <p class="lede">你先只能看<em>两家店</em>。看店免费，买卖才花次数。活过这个月，街上才会再开门。</p>
+          <p class="lede">这个月你要<em>交房租</em>。交不起就出局。股票带不走房租。</p>
+          <p class="lede">街上先只开<em>两家店</em>。点「看店」弄清它为什么涨，再决定把生活费押哪家。</p>
           <p class="fine">交不起房租就出局。股票可以带走，房东只要现金。不是投资建议。</p>
         </div>
         <button class="primary" data-act="boot">打开账本</button>
@@ -3864,8 +3865,8 @@ ${line}
         <div>
           <div class="kicker">把生活费放进来</div>
           <h1 style="font-size:40px;letter-spacing:0.06em">80,000</h1>
-          <p class="lede">转进去之后，买成店的那部分就不能再当房租。这个月只开两家：一家群里在喊，一家每天下午有现金。</p>
-          <p class="fine">房租从 ${money(RENT)} 起，会慢慢涨。点「看店」会记下它为什么涨。买卖每周两次。先看，再押。</p>
+          <p class="lede">转进去之后，买成店的钱就不能再交房租。这个月只开两家店。你的任务只有一个：月底拿出 ${money(RENT)} 现金给房东。</p>
+          <p class="fine">看店免费。买卖每周两次。先看，再押。活过这个月，街上才会再开门。</p>
         </div>
         <button class="primary" data-act="start">确认转入生活费</button>
       </section>`;
@@ -4434,6 +4435,49 @@ ${line}
       </section>`;
   }
 
+  function renderMission() {
+    const due = rentOf(currentMonth(state));
+    const wim = weekInMonth(state.week);
+    const shops = visibleCompanies(state);
+    const lookedAny = shops.some((c) => lookedCo(state, c.id));
+    const traded = (state.log || []).some(
+      (t) => t.week === state.week && (t.t === "buy" || t.t === "sell" || t.swap)
+    );
+    const rentNow = wim === WEEKS_PER_MONTH;
+    return `
+      <div class="mission">
+        <div class="mission-kicker">这个月只要做成一件事</div>
+        <b>交房租 ${money(due)} · 房东只要现金</b>
+        <ol>
+          <li class="${lookedAny ? "done" : "now"}">点「看店」，弄清它为什么涨（免费）</li>
+          <li class="${traded ? "done" : lookedAny ? "now" : ""}">买、卖，或这周先不买（还剩 ${state.actionsLeft} 次）</li>
+          <li class="${rentNow ? "now" : ""}">${
+            rentNow
+              ? "这周去交租。股票留下也行，现金必须给。"
+              : "活过这周 · 距交租 " + (WEEKS_PER_MONTH - wim) + " 周"
+          }</li>
+        </ol>
+      </div>`;
+  }
+
+  function renderClippings() {
+    const hs = weekHeadlines(state);
+    if (!hs.length) return "";
+    return `<div class="clippings">
+      <div class="clippings-h">今日报纸 · 点开读，不花次数</div>
+      ${hs
+        .map((h, i) => {
+          const rot = i % 2 ? "-1.4deg" : "1.1deg";
+          return `<button type="button" class="clip clip-${h.kind}" data-act="headline" data-i="${i}" style="--rot:${rot}">
+            <i>${h.src}</i>
+            <b>${h.title}</b>
+            <em>${kindLabel(h.kind)}</em>
+          </button>`;
+        })
+        .join("")}
+    </div>`;
+  }
+
   function renderPlay() {
     ensureBoard(state);
     const nav = navOf(state);
@@ -4449,18 +4493,22 @@ ${line}
     const listed = tabs ? shops.filter((c) => c.sector === state.board) : shops;
     const stocks = listed.map((c) => renderStockCard(c, busy)).join("");
     const hint = nextUnlockHint(state);
-    const streetH =
-      m === 1 ? "先看这两家店" : tabs ? board.name : "这个月街上的店";
-    const streetB =
-      m === 1
-        ? "一家群里在喊，一家每天下午有现金。看店不花次数。"
-        : tabs
-          ? board.blurb
-          : "店变多了。可以换仓：一笔操作卖掉一家、买进另一家。";
+    const nShop = shops.length;
+    const streetH = tabs
+      ? board.name
+      : nShop <= 2
+        ? "这个月只开两家店"
+        : "这个月开了 " + nShop + " 家";
+    const streetB = tabs
+      ? board.blurb
+      : nShop <= 2
+        ? "一家群里在喊，一家每天下午有现金。先看店，再决定押哪家。"
+        : "新店开门了。可以换仓。看店仍然免费。";
     const canSwap = m >= 2 && shops.some((c) => c.shares > 0);
 
     return `
-      <section class="screen" style="padding-top:18px">
+      <section class="screen play-desk" style="padding-top:18px">
+        ${renderMission()}
         ${renderTape()}
         <div class="live-row">
           <span class="live-pill">${m < 2 ? "看店免费" : '<i></i><span data-live-clock>' + liveClock() + "</span>"}</span>
@@ -4494,19 +4542,7 @@ ${line}
               }</span></div>`
             : ""
         }
-        ${
-          (() => {
-            const hs = weekHeadlines(state);
-            return hs.length
-              ? `<div class="feed"><div class="feed-h">今日新闻 · 点开读，不花回合 · 每局都不一样</div>${hs
-                  .map(
-                    (h, i) =>
-                      `<button class="headline" data-act="headline" data-i="${i}"><em>${h.src} · ${kindLabel(h.kind)}</em>${h.title}</button>`
-                  )
-                  .join("")}</div>`
-              : "";
-          })()
-        }
+        ${renderClippings()}
         ${renderBoards()}
         <p class="street-h">${streetH}</p>
         <p class="board-blurb">${streetB}${hint ? " " + hint : ""}</p>
