@@ -997,6 +997,15 @@ button {
   border: 1px solid var(--ink);
 }
 
+.week-moves .ghost small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
 .week-picked {
   margin-top: 10px;
   font-size: 13px;
@@ -1030,6 +1039,85 @@ button {
 
 .scar-last {
   color: var(--ink-soft);
+}
+
+.pad-thin,
+.window-line,
+.check-line {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.window-line {
+  color: var(--gold);
+}
+
+.check-line {
+  color: var(--ink-soft);
+}
+
+.review-box {
+  margin: 16px 0 8px;
+}
+
+.review-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+
+.cog-dot.on {
+  color: var(--seal);
+}
+
+.review-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.review-cell {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+}
+
+.review-cell i {
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+.review-cell b {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.review-cell span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.review-pierce,
+.rule-line {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+
+.rule-line {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .mission-kicker {
