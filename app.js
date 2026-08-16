@@ -3634,9 +3634,13 @@
     if (state.scene !== "play") return;
     const c = state.companies.find((x) => x.id === id);
     if (!c) return;
-    state.viewStock = id;
+    const stay = state.viewStock === id;
+    if (!stay) state.viewStock = null;
     state.sheet = null;
-    if (c.researchedWeeks.indexOf(state.week) >= 0) return;
+    if (c.researchedWeeks.indexOf(state.week) >= 0) {
+      toast(state, clueOf(c).why);
+      return;
+    }
     const pack = researchPack(c, state.week);
     c.researchedWeeks.push(state.week);
     state.log.push({ t: "look", week: state.week, id: c.id, name: c.name });
@@ -5206,14 +5210,72 @@
   }
 
   function renderBoards() {
+    return "";
+  }
+
+  function renderStreet(busy) {
+    const shops = visibleCompanies(state);
+    if (!shops.length) return `<p class="missed">这家街上这月还没开门。</p>`;
     const secs = visibleSectors(state);
-    if (!useBoards(state) || secs.length < 2) return "";
-    return `<div class="boards">${secs
+    const boxes = (secs.length >= 2 ? secs : [{ id: "street", name: shops.length <= 2 ? "这个月开的店" : "街上" }])
       .map((sec) => {
-        const on = state.board === sec.id ? "on" : "";
-        return `<button class="board ${on}" data-act="pick-board" data-id="${sec.id}">${sec.name}</button>`;
+        const rows = (sec.id === "street" ? shops : shops.filter((c) => c.sector === sec.id)).map((c) =>
+          renderShopRow(c, busy)
+        );
+        if (!rows.length) return "";
+        return `<div class="street-box sec-${sec.id}">
+          <div class="street-box-h">${sec.name}</div>
+          ${rows.join("")}
+        </div>`;
       })
-      .join("")}</div>`;
+      .join("");
+    const n = shops.length;
+    const tip =
+      n <= 2
+        ? "看店免费。结论写在这一行上，不用点进去。"
+        : "开了 " + n + " 家。看店写在行上。点店名才进细账。";
+    return `<p class="street-tip">${tip}</p><div class="street">${boxes}</div>`;
+  }
+
+  function renderShopRow(c, busy) {
+    const prev = c.prevClose || c.history[0];
+    const px = quoteOf(c);
+    const chg = (px - prev) / prev;
+    const up = chg >= 0;
+    const looked = lookedCo(state, c.id);
+    const halt = isHalted(state, c);
+    const locked = !canTrade(state, c);
+    const off = busy ? "disabled" : "";
+    const fork = nudgeOf(state, c.id);
+    const line = looked
+      ? clueOf(c).line
+      : halt
+        ? "本周停牌"
+        : locked
+          ? "未开通 · 可以看"
+          : fork
+            ? "这周值得看一眼"
+            : "还没看";
+    const sell = c.shares
+      ? `<button class="sell" data-act="open-sell" data-id="${c.id}" ${off}>卖</button>`
+      : "";
+    return `<article class="shop-row${looked ? " seen" : ""}${fork ? " forked" : ""}${c.shares ? " held" : ""}">
+      <button type="button" class="shop-main" data-act="open-stock" data-id="${c.id}">
+        <div class="shop-id">
+          <b>${c.name}${c.shares ? "<i>持仓</i>" : ""}</b>
+          <em>${line}</em>
+        </div>
+        <div class="shop-px">
+          <b data-live-px="${c.id}">${px.toFixed(2)}</b>
+          <span class="pnl ${up ? "up" : "down"}" data-live-chg="${c.id}">${pct(chg)}</span>
+        </div>
+      </button>
+      <div class="shop-acts">
+        <button class="${fork && !looked ? "nudge" : ""}" data-act="research" data-id="${c.id}">${looked ? "再看" : "看店"}</button>
+        <button class="buy" data-act="open-buy" data-id="${c.id}" ${off}>${halt ? "停" : locked ? "锁" : "买"}</button>
+        ${sell}
+      </div>
+    </article>`;
   }
 
   function shopButtons(c, busy) {
@@ -5240,9 +5302,10 @@
   function renderClue(c) {
     if (!lookedCo(state, c.id)) {
       return `<button type="button" class="look-cta" data-act="research" data-id="${c.id}">看店 · 这周它为什么涨</button>
-        <p class="hint">群里的话不算。进账、故事、人群，看过才写在账上。</p>`;
+        <p class="hint">结论会写回街上那一行。细账不是必看的。</p>`;
     }
     const clue = clueOf(c);
+    const deep = state.flags.deepLook === c.id;
     return `<div class="clue-box">
         <div class="clue-kicker">看店记下 · 本周</div>
         <p class="clue-why">${clue.why}</p>
@@ -5252,52 +5315,11 @@
           <li>${clue.crowdLine}</li>
         </ul>
       </div>
-      ${renderAnalysis(c)}`;
-  }
-
-  function renderStockCard(c, busy) {
-    const prev = c.prevClose || c.history[0];
-    const px = quoteOf(c);
-    const chg = (px - prev) / prev;
-    const up = chg >= 0;
-    const w = weightOf(state, c.id);
-    const u = unrealizedOf(c);
-    const halt = isHalted(state, c);
-    const locked = !canTrade(state, c);
-    const looked = lookedCo(state, c.id);
-    const clue = looked ? clueOf(c) : null;
-    const held = c.shares
-      ? `仓位 ${pct(w)} · 成本 ${c.avgCost.toFixed(2)} · 浮${u >= 0 ? "盈" : "亏"} ${pct(
-          (c.price - c.avgCost) / (c.avgCost || 1)
-        )}`
-      : halt
-        ? "本周停牌 · 买不了也卖不了"
-        : locked
-          ? "未开通 · 可以看，不能买"
-          : c.lot > 1
-            ? "一手 " + c.lot + " 股 · 约 " + money(lotCost(c))
-            : looked
-              ? clue.line
-              : "还没看店。群说的不算。";
-    const hot = false;
-    return `
-      <article class="stock ${hot ? "hot" : ""} ${locked ? "dim" : ""} ${looked ? "seen" : ""} ${nudgeOf(state, c.id) ? "forked" : ""}">
-        <button type="button" class="stock-hit" data-act="open-stock" data-id="${c.id}">
-          <div class="stock-head">
-            <div>
-              <div class="name">${c.name}<span class="ticker">${looked ? "已看" : c.ticker}</span></div>
-              <span class="tag">${nudgeOf(state, c.id) && !looked ? "这周值得看一眼" : c.tag}</span>
-            </div>
-            <div class="px">
-              <div class="now" data-live-px="${c.id}">${px.toFixed(2)}</div>
-              <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}">${pct(chg)}</div>
-            </div>
-          </div>
-          ${sparkline(c.history, up)}
-          <div class="pos">${held}</div>
-        </button>
-        ${shopButtons(c, busy)}
-      </article>`;
+      ${
+        deep
+          ? renderAnalysis(c)
+          : `<button type="button" class="ghost deep-look" data-act="deep-look" data-id="${c.id}">还想看细账 · PE、现金流、旧新闻</button>`
+      }`;
   }
 
   function renderAnalysis(c) {
@@ -5374,27 +5396,23 @@
               : `<button type="button" class="coach" data-act="ack-nav">左上角能回去 · 点这里关掉</button>`
           }
         </div>
-        ${renderTape()}
-        <div class="live-row">
-          <span class="live-pill">${currentMonth(state) < 2 ? "看店免费" : '<i></i><span data-live-clock>' + liveClock() + "</span>"}</span>
-          <span class="actions-left" style="margin:0">买卖还剩 ${state.actionsLeft} 次</span>
-        </div>
         <h2 class="stock-title">${c.name}</h2>
         <div class="px-lg">
           <div class="now" data-live-px="${c.id}">${px.toFixed(2)}</div>
-          <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}" data-live-suffix="${currentMonth(state) < 2 ? " · 本周" : " · 盘中"}">${pct(chg)}${currentMonth(state) < 2 ? " · 本周" : " · 盘中"}</div>
+          <div class="chg pnl ${up ? "up" : "down"}" data-live-chg="${c.id}">${pct(chg)}</div>
         </div>
-        ${candleChart(c)}
+        ${renderClue(c)}
+        ${
+          state.flags.deepLook === c.id
+            ? `${candleChart(c)}
         <div class="quote-row">
           <span>高 ${hi.toFixed(2)}</span>
           <span>低 ${lo.toFixed(2)}</span>
           <span>一手 ${c.lot || 1} 股</span>
           <span>${money(lotCost(c))}</span>
         </div>
-        ${currentMonth(state) >= 2 ? `<div class="prints-h">实时成交</div><div class="prints" id="prints">${printsInner()}</div>` : ""}
-        ${renderClue(c)}
         <div class="dossier">${c.backstory}</div>
-        <div class="feed-h">本周关于它 · 每局都不一样</div>
+        <div class="feed-h">本周关于它</div>
         ${
           state.wire && state.wire.stock[c.id] && state.wire.stock[c.id][state.week - 1]
             ? `<button class="headline" data-act="co-news" data-id="${c.id}" data-i="${state.week - 1}"><em>${state.wire.stock[c.id][state.week - 1].src} · ${kindLabel(
@@ -5417,7 +5435,9 @@
             : ""
         }
         <div class="feed-h">你的足迹</div>
-        ${mem}
+        ${mem}`
+            : ""
+        }
         <div class="pos">${
           c.shares
             ? `持仓 ${c.shares} 股 · 成本 ${c.avgCost.toFixed(2)} · 浮${u >= 0 ? "盈" : "亏"} ${money(u)}`
@@ -5557,25 +5577,10 @@
     const ret = nav / startCashOf(state) - 1;
     const script = flavoredScript(state);
     const busy = state.actionsLeft <= 0 ? "disabled" : "";
-    const board = sectorOf(state.board) || SECTORS[1];
     const due = rentOf(currentMonth(state));
     const m = currentMonth(state);
     const wim = weekInMonth(state.week);
     const shops = visibleCompanies(state);
-    const tabs = useBoards(state);
-    const listed = tabs ? shops.filter((c) => c.sector === state.board) : shops;
-    const stocks = listed.map((c) => renderStockCard(c, busy)).join("");
-    const nShop = shops.length;
-    const streetH = tabs
-      ? board.name
-      : nShop <= 2
-        ? "这个月只开两家店"
-        : "这个月开了 " + nShop + " 家";
-    const streetB = tabs
-      ? board.blurb
-      : nShop <= 2
-        ? "一家群里在喊，一家每天下午有现金。先看店，再决定押哪家。"
-        : "新店开门了。可以换仓。看店仍然免费。";
     const canSwap = m >= 2 && shops.some((c) => c.shares > 0);
 
     return `
@@ -5613,13 +5618,7 @@
             : ""
         }
         ${renderClippings()}
-        ${renderBoards()}
-        ${
-          m === 1
-            ? `<p class="street-h">${streetH}</p><p class="board-blurb">${streetB}</p>`
-            : ""
-        }
-        <div class="stocks">${stocks || `<p class="missed">这家街上这月还没开门。</p>`}</div>
+        ${renderStreet(busy)}
         <div class="footer">
           ${
             m === 1 && canSwap
@@ -6056,6 +6055,9 @@
       }
     }
     if (act === "research") research(state, id);
+    if (act === "deep-look") {
+      state.flags.deepLook = state.flags.deepLook === id ? null : id;
+    }
     if (act === "open-buy") {
       const c = state.companies.find((x) => x.id === id);
       if (c && isHalted(state, c)) {

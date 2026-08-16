@@ -308,6 +308,164 @@ button {
   color: var(--ink);
 }
 
+.street-tip {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 8px;
+}
+
+.street {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.street-box {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 2px 3px 0 rgba(42, 33, 24, 0.1);
+  overflow: hidden;
+}
+
+.street-box-h {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  padding: 6px 10px 5px;
+  color: var(--ink-soft);
+  background: rgba(42, 33, 24, 0.04);
+  border-bottom: 1px solid var(--line);
+}
+
+.street-box.sec-consumer {
+  border-left: 4px solid #3d7a4a;
+}
+
+.street-box.sec-tech {
+  border-left: 4px solid var(--seal);
+}
+
+.street-box.sec-gem {
+  border-left: 4px solid #8a5a22;
+}
+
+.street-box.sec-premium {
+  border-left: 4px solid #6b4c9a;
+}
+
+.street-box.sec-tools {
+  border-left: 4px solid #5c6b7a;
+}
+
+.street-box.sec-crypto {
+  border-left: 4px solid #a56b28;
+}
+
+.shop-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 8px 7px 10px;
+  border-bottom: 1px solid rgba(42, 33, 24, 0.06);
+}
+
+.shop-row:last-child {
+  border-bottom: 0;
+}
+
+.shop-row.forked {
+  background: rgba(181, 68, 50, 0.06);
+}
+
+.shop-row.held .shop-id b i {
+  font-style: normal;
+  font-size: 10px;
+  margin-left: 6px;
+  color: var(--seal);
+  letter-spacing: 0.08em;
+}
+
+.shop-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-align: left;
+}
+
+.shop-id {
+  min-width: 0;
+}
+
+.shop-id b {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.shop-id em {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shop-row.seen .shop-id em {
+  color: var(--ink-soft);
+}
+
+.shop-px {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.shop-px b {
+  display: block;
+  font-size: 15px;
+}
+
+.shop-px span {
+  font-size: 11px;
+}
+
+.shop-acts {
+  display: flex;
+  gap: 4px;
+}
+
+.shop-acts button {
+  height: 32px;
+  min-width: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.shop-acts .buy {
+  background: var(--seal);
+  color: #fbf6ea;
+  border-color: var(--seal);
+}
+
+.shop-acts .sell {
+  border-color: #5a3030;
+}
+
+.deep-look {
+  width: 100%;
+  margin-top: 10px;
+  text-align: left;
+  font-size: 12px;
+}
+
 .stocks {
   display: flex;
   flex-direction: column;
